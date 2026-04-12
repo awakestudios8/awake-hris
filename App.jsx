@@ -244,7 +244,7 @@ return <><div className="cd"><div className="ch"><span className="ct">Slip Gaji<
 {pds.filter(p=>!(ek?.e===sel&&ek?.p===p)).map(p=><SlipVw key={p} ei={sel} pr={p} dt={sl[sel][p]} adm={true} onEd={()=>sEk({e:sel,p})} onDl={()=>{sSl(prev=>{const n={...prev};if(n[sel]){const c={...n[sel]};delete c[p];n[sel]=c;}return n;});}}/>)}
 {pds.length===0&&!ek&&<div className="cd" style={{textAlign:"center",color:"#94a3b8",padding:32}}>Belum ada slip gaji.</div>}</>;};
 
-const ALv=()=>{const[elv,sElv]=useState(null);const[elvF,sElvF]=useState({t:"",s:"",e:"",d:0,r:"",st:""});const[nlv,sNlv]=useState(false);const[nlvF,sNlvF]=useState({ei:"",t:"Cuti",s:"",e:"",d:1,r:""});
+const ALvWrap=()=>{const[elv,sElv]=useState(null);const[elvF,sElvF]=useState({t:"",s:"",e:"",d:0,r:"",st:""});const[nlv,sNlv]=useState(false);const[nlvF,sNlvF]=useState({ei:"",t:"Cuti",s:"",e:"",d:1,r:""});
 return <div className="cd"><div className="ch"><span className="ct">Cuti / Sakit / Izin</span><button className="btn" onClick={()=>sNlv(!nlv)}>{nlv?"Batal":<><Plus size={14}/>Tambah</>}</button></div>
 {nlv&&<AdminLeaveForm em={em} onSubmit={(f)=>{const emp=em.find(e=>e.id===f.ei);si("leaves",{employee_id:f.ei,employee_name:emp.n,type:f.t,start_date:f.s,end_date:f.e||f.s,days:f.d||1,reason:f.r,status:"Approved"}).then(r=>{if(r?.[0])sLv(p=>[...p,{id:r[0].id,ei:f.ei,en:emp.n,t:f.t,s:f.s,e:f.e||f.s,d:f.d||1,r:f.r,st:"Approved"}]);});sNlv(false);}}/>}
 <div className="tw"><table><thead><tr><th>Nama</th><th>Tipe</th><th>Tanggal</th><th>Hari</th><th>Sisa Cuti</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{lv.map(l=>{const cu=CQ-cU(l.ei);const isE=elv===l.id;
@@ -316,7 +316,7 @@ const EAtt=()=>{if(!le)return null;return <div className="cd"><div className="ch
 
 const EPay=()=>{if(!le)return null;const pds=eSP(le.id);return <div className="cd"><div className="ch"><span className="ct">Slip Gaji</span></div>{pds.length===0?<div style={{textAlign:"center",padding:24,color:"#94a3b8"}}>Belum ada slip gaji.</div>:pds.map(p=><SlipVw key={p} ei={le.id} pr={p} dt={sl[le.id][p]} adm={false} onEd={()=>{}} onDl={()=>{}}/>)}</div>;};
 
-const ELv=()=>{if(!le)return null;const ml=lv.filter(l=>l.ei===le.id),cu=CQ-cU(le.id);
+const ELvWrap=()=>{if(!le)return null;const ml=lv.filter(l=>l.ei===le.id),cu=CQ-cU(le.id);
 return <div className="cd"><div className="ch"><span className="ct">Cuti / Sakit / Izin</span><button className="btn" onClick={()=>sScl(!scl)}>{scl?"Batal":<><Plus size={14}/>Ajukan</>}</button></div>
 <div style={{fontSize:13,color:"#64748b",marginBottom:10}}>Sisa cuti: <strong style={{color:cu<=3?"#ef4444":"#16a34a"}}>{cu} dari {CQ} hari</strong></div>
 {scl&&<EmpLeaveForm le={le} cu={cu} CQ={CQ} onSubmit={(f)=>{si("leaves",{employee_id:le.id,employee_name:le.n,type:f.t,start_date:f.s,end_date:f.end,days:f.d,reason:f.r,status:"Pending"}).then(r=>{if(r?.[0])sLv(p=>[...p,{id:r[0].id,ei:le.id,en:le.n,t:f.t,s:f.s,e:f.end,d:f.d,r:f.r,st:"Pending"}]);});sScl(false);}}/>}
@@ -328,8 +328,26 @@ const EPw=()=>{if(!le)return null;const myAcc=ac.find(a=>a.e===le.id);
 return <div className="cd"><div className="ch"><span className="ct">Ubah Password</span></div>
 <ChpwForm myAcc={myAcc} ae={ae} onError={sAe} onSubmit={(newPw)=>{sAc(p=>p.map(a=>a.e===le.id?{...a,p:newPw}:a));const myAcc2=ac.find(a=>a.e===le.id);if(myAcc2)su("accounts",{password:newPw},"id=eq."+myAcc2.id);sAe("");}}/></div>;};
 
-const VM={dashboard:ADash,attendance:AAtt,calendar:ACal,payslip:APay,leave:ALv,sp2:ASP,lembur:ALbr,dispensasi:ADisp,employees:AEmp,accounts:AAcc,upload:AUp,"emp-dash":EDash,"emp-att":EAtt,"emp-pay":EPay,"emp-leave":ELv,"emp-sp":ESP2,"emp-pw":EPw};
-const V=VM[vw]||ADash;
+const renderView=()=>{switch(vw){
+case"dashboard":return ADash();
+case"attendance":return AAtt();
+case"calendar":return ACal();
+case"payslip":return APay();
+case"leave":return <ALvWrap/>;
+case"sp2":return ASP();
+case"lembur":return ALbr();
+case"dispensasi":return ADisp();
+case"employees":return AEmp();
+case"accounts":return AAcc();
+case"upload":return AUp();
+case"emp-dash":return EDash();
+case"emp-att":return EAtt();
+case"emp-pay":return EPay();
+case"emp-leave":return <ELvWrap/>;
+case"emp-sp":return ESP2();
+case"emp-pw":return EPw();
+default:return ADash();
+}};
 
 return <><style>{css}</style><div className="ly">
 <div className={"so"+(so?" sh":"")} onClick={()=>sSo(false)}/>
@@ -341,5 +359,5 @@ return <><style>{css}</style><div className="ly">
 </aside>
 <main className="mn"><div className="tb"><div style={{display:"flex",alignItems:"center",gap:10}}><button className="mb" onClick={()=>sSo(true)}><Menu size={22}/></button><h1>{titles[vw]}</h1></div>
 {rl==="admin"&&pN>0&&<button className="btn bs" style={{position:"relative"}} onClick={()=>sVw("leave")}><Bell size={16}/><span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#ef4444",color:"#fff",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{pN}</span></button>}
-</div><V key={vw}/></main></div></>;
+</div>{renderView()}</main></div></>;
 }
