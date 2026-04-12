@@ -341,5 +341,5 @@ return <><style>{css}</style><div className="ly">
 </aside>
 <main className="mn"><div className="tb"><div style={{display:"flex",alignItems:"center",gap:10}}><button className="mb" onClick={()=>sSo(true)}><Menu size={22}/></button><h1>{titles[vw]}</h1></div>
 {rl==="admin"&&pN>0&&<button className="btn bs" style={{position:"relative"}} onClick={()=>sVw("leave")}><Bell size={16}/><span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#ef4444",color:"#fff",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{pN}</span></button>}
-</div>{V()}</main></div></>;
+</div><V key={vw}/></main></div></>;
 }
