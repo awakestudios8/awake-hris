@@ -151,14 +151,24 @@ if(atts?.length){const ma={};atts.forEach(a=>{ma[a.employee_id+"-"+a.date]=a.clo
 
 
 const gA=useCallback((ei,d,dt)=>{
+const none={st:"-",ci:null,co:null,oi:null,oo:null,oh:0,obk:0,la:false,lm:0,wt:false};
 const today=new Date();today.setHours(0,0,0,0);
 const checkDt=dt?new Date(dt):null;
-if(checkDt){checkDt.setHours(0,0,0,0);if(checkDt>today)return{st:"-",ci:null,co:null,oi:null,oo:null,oh:0,obk:0,la:false,lm:0,wt:false};}
-const dateKey=dt?ei+"-"+dt.toISOString().slice(0,10):null;
-if(dateKey&&manAtt[dateKey]){const ms=manAtt[dateKey];return{st:ms,ci:ms==="Hadir"?"08:00":null,co:ms==="Hadir"?"17:00":null,oi:null,oo:null,oh:0,obk:0,la:false,lm:0,wt:false};}
+if(checkDt){checkDt.setHours(0,0,0,0);}
+/* 1. Future date */
+if(checkDt&&checkDt>today)return none;
+/* 2. Manual attendance override from Rekap Periode edit */
+const dateKey=dt?ei+'-'+dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'):null;
+if(dateKey&&manAtt[dateKey]){const ms=manAtt[dateKey];return{...none,st:ms,ci:ms==="Hadir"?"08:00":null,co:ms==="Hadir"?"17:00":null};}
+/* 3. Check approved leaves (Cuti/Sakit/Izin) */
+if(checkDt){const ds=checkDt.getFullYear()+'-'+String(checkDt.getMonth()+1).padStart(2,'0')+'-'+String(checkDt.getDate()).padStart(2,'0');const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&ds>=l.s&&ds<=l.e);if(leave)return{...none,st:leave.t};}
+/* 4. Punch data from Deli machine */
 const r=pP(aP[ei]?.[d],dp[ei+"-"+d]);const ok=ei+"-"+d;if(ovr[ok]?.oh!==undefined)r.oh=ovr[ok].oh;if(ovr[ok]?.obk!==undefined)r.obk=ovr[ok].obk;
-if(checkDt&&checkDt<=today&&r.st==="Alpha"){const w=checkDt.getDay();if(w===0)return{...r,st:"-"};}
-return r;},[aP,dp,ovr,manAtt]);
+/* 5. If still Alpha, check if it's Sunday (holiday) */
+if(r.st==="Alpha"&&checkDt){const w=checkDt.getDay();if(w===0)return{...r,st:"-"};}
+/* 6. Check if overtime was manually input for this date */
+if(checkDt){const ds2=checkDt.getFullYear()+'-'+String(checkDt.getMonth()+1).padStart(2,'0')+'-'+String(checkDt.getDate()).padStart(2,'0');const ot=lbr.find(o=>o.ei===ei&&o.tgl===ds2);if(ot){r.oh=ot.jam;}}
+return r;},[aP,dp,ovr,manAtt,lv,lbr]);
 const tD=(ei,d)=>{const k=ei+"-"+d;sDp(p=>({...p,[k]:!p[k]}));};
 const cU=useCallback(ei=>lv.filter(l=>l.ei===ei&&l.t==="Cuti"&&l.st==="Approved").reduce((a,l)=>a+l.d,0),[lv]);
 const aS=useCallback(ei=>sp.filter(s=>s.ei===ei&&new Date(s.ex)>new Date()),[sp]);
@@ -271,7 +281,7 @@ return <div className="cd"><div className="ch"><span className="ct">Rekap Period
 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>{em.map(e=><button key={e.id} className={"btn bs "+(sls===e.id?"":"bo")} style={sls===e.id?{background:BR,color:"#fff"}:{}} onClick={()=>sSls(sls===e.id?"":e.id)}>{e.n}</button>)}</div>
 {emp&&rc&&<><div style={{background:BL,borderRadius:14,padding:16,marginBottom:16,border:"1px solid rgba(175,25,23,.08)"}}><div className="er" style={{marginBottom:8}}><div className="av" style={{background:BR,width:40,height:40,fontSize:16}}>{emp.n[0]}</div><div><div style={{fontWeight:700,fontSize:16}}>{emp.n}</div><div style={{fontSize:12,color:"#64748b"}}>{emp.p} — Gaji tgl {emp.pd}</div><div style={{fontSize:12,color:BR,fontWeight:600,marginTop:2}}>Periode: {prd}</div></div></div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8}}>{[{l:"Kehadiran",v:rc.h,c:"#16a34a"},{l:"Terlambat",v:rc.t,c:"#ca8a04"},{l:"Alpha",v:rc.a,c:"#ef4444"},{l:"Lembur",v:fj(rc.ol),c:"#d97706"},{l:"Lembur Libur",v:fj(rc.ow),c:"#c2410c"},{l:"Sisa Cuti",v:(CQ-cU(emp.id))+"/"+CQ,c:"#2563eb"}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:10,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:x.c}}>{x.v}</div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{x.l}</div></div>)}</div></div>
-<div className="tw"><table><thead><tr><th>Tgl</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th><th>Edit</th></tr></thead><tbody>{(()=>{const pr2=getPR(emp.pd);const ds=[];for(let dt=new Date(pr2.sd);dt<=pr2.ed;dt.setDate(dt.getDate()+1)){ds.push(new Date(dt));}return ds.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const a=gA(emp.id,d,new Date(dt));const we=w===0;if(we&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.25}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={5} style={{color:"#cbd5e1"}}>Libur</td></tr>;const ds2=dt.toISOString().slice(0,10);const isFut=new Date(dt)>new Date(new Date().setHours(0,0,0,0));
+<div className="tw"><table><thead><tr><th>Tgl</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th><th>Edit</th></tr></thead><tbody>{(()=>{const pr2=getPR(emp.pd);const ds=[];for(let dt=new Date(pr2.sd);dt<=pr2.ed;dt.setDate(dt.getDate()+1)){ds.push(new Date(dt));}return ds.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const a=gA(emp.id,d,new Date(dt));const we=w===0;if(we&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.25}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={5} style={{color:"#cbd5e1"}}>Libur</td></tr>;const ds2=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const isFut=new Date(dt)>new Date(new Date().setHours(0,0,0,0));
 return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td>{isFut?<span style={{color:"#cbd5e1"}}>—</span>:<span style={bg(a.st==="Hadir"||a.st==="Terlambat"?"hadir":a.st.toLowerCase())}>{a.st}</span>}</td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}</span>:"-"}</td>{!isFut&&<td><select className="inp" value={manAtt[emp.id+"-"+ds2]||""} onChange={e=>{const v=e.target.value;if(v)setAtt(emp.id,ds2,v);else{sManAtt(p=>{const n={...p};delete n[emp.id+"-"+ds2];return n;});}}} style={{width:90,padding:"4px 6px",fontSize:11}}><option value="">Auto</option><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Cuti">Cuti</option><option value="Alpha">Alpha</option></select></td>}</tr>;});})()}</tbody></table></div></>}</div>;};
 
 const APay=()=>{const sel=sls||em[0]?.id;const pds=eSP(sel);
