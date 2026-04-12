@@ -125,18 +125,19 @@ const[sp,sSp]=useState([]);
 const[sl,sSl]=useState({});const[ek,sEk]=useState(null);const[ssf,sSsf]=useState(false);const[spf,sSpf]=useState({e:"",l:1,r:"",dt:"",ex:""});const[espE,sEspE]=useState(null);const[espF,sEspF]=useState({lv:1,r:"",dt:"",ex:""});
 const[clf,sClf]=useState({t:"Cuti",s:"",e:"",r:""});const[scl,sScl]=useState(false);
 const[ee,sEe]=useState(null);const[ef,sEf]=useState({p:"",pd:1,s:0});
-const[sns,sSns]=useState(false);const[snp,sSnp]=useState("");const[sls,sSls]=useState("");const[ups,sUps]=useState("");const[ovr,sOvr]=useState({});const[lbr,sLbr]=useState([]);const[showLbr,sShowLbr]=useState(false);const[lbrF,sLbrF]=useState({ei:"",tgl:"",jam:0,ket:""});const[eLbr,sELbr]=useState(null);const[eLbrF,sELbrF]=useState({jam:0,ket:""});
+const[sns,sSns]=useState(false);const[snp,sSnp]=useState("");const[sls,sSls]=useState("");const[ups,sUps]=useState("");const[ovr,sOvr]=useState({});const[manAtt,sManAtt]=useState({});const[lbr,sLbr]=useState([]);const[showLbr,sShowLbr]=useState(false);const[lbrF,sLbrF]=useState({ei:"",tgl:"",jam:0,ket:""});const[eLbr,sELbr]=useState(null);const[eLbrF,sELbrF]=useState({jam:0,ket:""});
 const[regF,sRegF]=useState({e:"",u:"",p:""});const[showReg,sShowReg]=useState(false);
 const[chpw,sChpw]=useState({o:"",n:"",c:""});
 
 useEffect(()=>{(async()=>{try{
-const[emps,accs,lvs,sps,pss,otms]=await Promise.all([
+const[emps,accs,lvs,sps,pss,otms,atts]=await Promise.all([
 sf("employees","?order=name"),
 sf("accounts"),
 sf("leaves","?order=created_at.desc"),
 sf("warnings","?order=issued_date.desc"),
 sf("payslips"),
 sf("overtime","?order=date.desc"),
+sf("attendance"),
 ]);
 if(emps?.length){const mapped=emps.map(e=>({id:e.id,n:e.name,d:e.department,p:e.position,pd:e.pay_date,s:e.salary}));sEm(mapped);const ap={};mapped.forEach(e=>{ap[e.id]={};});sAP(ap);}
 if(accs?.length)sAc(accs.map(a=>({id:a.id,u:a.username,p:a.password,r:a.role,e:a.employee_id})));
@@ -144,16 +145,35 @@ if(lvs?.length)sLv(lvs.map(l=>({id:l.id,ei:l.employee_id,en:l.employee_name,t:l.
 if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s.level,r:s.reason,dt:s.issued_date,ex:s.expiry_date})));
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:o.date,jam:o.hours,ket:o.notes})));
+if(atts?.length){const ma={};atts.forEach(a=>{ma[a.employee_id+"-"+a.date]=a.clock_in||"Hadir";});sManAtt(ma);}
 }catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
 
 
 
-const gA=useCallback((ei,d)=>{const r=pP(aP[ei]?.[d],dp[ei+"-"+d]);const ok=ei+"-"+d;if(ovr[ok]?.oh!==undefined)r.oh=ovr[ok].oh;if(ovr[ok]?.obk!==undefined)r.obk=ovr[ok].obk;return r;},[aP,dp,ovr]);
+const gA=useCallback((ei,d,dt)=>{
+const today=new Date();today.setHours(0,0,0,0);
+const checkDt=dt?new Date(dt):null;
+if(checkDt){checkDt.setHours(0,0,0,0);if(checkDt>today)return{st:"-",ci:null,co:null,oi:null,oo:null,oh:0,obk:0,la:false,lm:0,wt:false};}
+const dateKey=dt?ei+"-"+dt.toISOString().slice(0,10):null;
+if(dateKey&&manAtt[dateKey]){const ms=manAtt[dateKey];return{st:ms,ci:ms==="Hadir"?"08:00":null,co:ms==="Hadir"?"17:00":null,oi:null,oo:null,oh:0,obk:0,la:false,lm:0,wt:false};}
+const r=pP(aP[ei]?.[d],dp[ei+"-"+d]);const ok=ei+"-"+d;if(ovr[ok]?.oh!==undefined)r.oh=ovr[ok].oh;if(ovr[ok]?.obk!==undefined)r.obk=ovr[ok].obk;
+if(checkDt&&checkDt<=today&&r.st==="Alpha"){const w=checkDt.getDay();if(w===0||w===6)return{...r,st:"-"};}
+return r;},[aP,dp,ovr,manAtt]);
 const tD=(ei,d)=>{const k=ei+"-"+d;sDp(p=>({...p,[k]:!p[k]}));};
 const cU=useCallback(ei=>lv.filter(l=>l.ei===ei&&l.t==="Cuti"&&l.st==="Approved").reduce((a,l)=>a+l.d,0),[lv]);
 const aS=useCallback(ei=>sp.filter(s=>s.ei===ei&&new Date(s.ex)>new Date()),[sp]);
 const pN=lv.filter(l=>l.st==="Pending").length;
-const pR=useCallback((ei,pd)=>{let h=0,t=0,a=0,ol=0,ow=0;const sd=pd||5;for(let d=1;d<=30;d++){const at=gA(ei,d);if(at.st==="Hadir"||at.st==="Terlambat")h++;else if(at.st==="Alpha")a++;if(at.st==="Terlambat")t++;if(at.wt)ow=rj(ow+at.oh);else ol=rj(ol+at.oh);}return{h,t,a,ol,ow};},[gA]);
+const pR=useCallback((ei,pd)=>{let h=0,t=0,a=0,ol=0,ow=0;
+const pr=getPR(pd);const today=new Date();today.setHours(0,0,0,0);
+for(let dt=new Date(pr.sd);dt<=pr.ed;dt.setDate(dt.getDate()+1)){
+const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today)continue;
+const d=dt.getDate();const w=dt.getDay();if(w===0||w===6){const at=gA(ei,d,new Date(dt));if(at.wt)ow=rj(ow+at.oh);continue;}
+const at=gA(ei,d,new Date(dt));if(at.st==="Hadir"||at.st==="Terlambat")h++;else if(at.st==="Alpha")a++;
+if(at.st==="Terlambat")t++;if(!at.wt)ol=rj(ol+at.oh);
+}return{h,t,a,ol,ow};},[gA]);
+const setAtt=(ei,dateStr,status)=>{const k=ei+"-"+dateStr;sManAtt(p=>({...p,[k]:status}));
+si("attendance",{employee_id:ei,date:dateStr,clock_in:status}).catch(()=>{});};
+
 const svSl=(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));fetch(SUPA+"/rest/v1/payslips",{method:"POST",headers:{...SH,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})});};
 const eSP=ei=>Object.keys(sl[ei]||{}).sort().reverse();
 
@@ -235,11 +255,11 @@ return <div style={{maxWidth:520,margin:"0 auto"}}>
 // ═══ ADMIN DASHBOARD ═══
 const ADash=()=>{
 const today=new Date().getDate();
-let th=0,tt=0,ta=0;em.forEach(e=>{const at=gA(e.id,today);if(at.st==="Hadir"||at.st==="Terlambat")th++;else if(at.st==="Alpha")ta++;if(at.st==="Terlambat")tt++;});
-let mh=0,mt=0,ma=0,mol=0,mow=0;em.forEach(e=>{for(let d=1;d<=30;d++){const at=gA(e.id,d);if(at.st==="Hadir"||at.st==="Terlambat")mh++;else if(at.st==="Alpha")ma++;if(at.st==="Terlambat")mt++;if(at.wt)mow=rj(mow+at.oh);else mol=rj(mol+at.oh);}});
-return <><div className="cd" style={{marginBottom:16}}><div className="ct" style={{marginBottom:12}}>Hari Ini — {new Date().getDate()} April 2026</div>
+let th=0,tt=0,ta=0;em.forEach(e=>{const at=gA(e.id,today,new Date());if(at.st==="Hadir"||at.st==="Terlambat")th++;else if(at.st==="Alpha")ta++;if(at.st==="Terlambat")tt++;});
+let mh=0,mt=0,ma=0,mol=0,mow=0;em.forEach(e=>{const rc2=pR(e.id,e.pd);mh+=rc2.h;mt+=rc2.t;ma+=rc2.a;mol=rj(mol+rc2.ol);mow=rj(mow+rc2.ow);});
+return <><div className="cd" style={{marginBottom:16}}><div className="ct" style={{marginBottom:12}}>Hari Ini — {new Date().getDate()} {MN[new Date().getMonth()]} {new Date().getFullYear()}</div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>{[{l:"Hadir",v:th,c:"#16a34a",Ic:UserCheck},{l:"Terlambat",v:tt,c:"#ca8a04",Ic:Clock},{l:"Alpha",v:ta,c:"#ef4444",Ic:X},{l:"Pending Cuti",v:pN,c:BR,Ic:FileText}].map((x,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:12,background:"#f8f9fb",borderRadius:12}}><div style={{width:36,height:36,borderRadius:10,background:x.c+"12",display:"flex",alignItems:"center",justifyContent:"center"}}><x.Ic size={16} color={x.c}/></div><div><div className="sl">{x.l}</div><div className="sv2" style={{color:x.c}}>{x.v}</div></div></div>)}</div></div>
-<div className="cd" style={{marginBottom:16}}><div className="ct" style={{marginBottom:12}}>Bulan Ini — April 2026</div>
+<div className="cd" style={{marginBottom:16}}><div className="ct" style={{marginBottom:12}}>Periode Ini</div>
 <div className="sg">{[{l:"Kehadiran",v:mh,c:"#16a34a",Ic:UserCheck},{l:"Terlambat",v:mt,c:"#ca8a04",Ic:Clock},{l:"Alpha",v:ma,c:"#ef4444",Ic:X},{l:"Lembur",v:fj(mol),c:"#d97706",Ic:TrendingUp},{l:"Lembur Hari Libur",v:fj(mow),c:"#c2410c",Ic:Sun},{l:"Pending",v:pN,c:BR,Ic:FileText}].map((x,i)=><div key={i} className="sc"><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:36,height:36,borderRadius:10,background:x.c+"12",display:"flex",alignItems:"center",justifyContent:"center"}}><x.Ic size={16} color={x.c}/></div><div><div className="sl">{x.l}</div><div className="sv2" style={{color:x.c}}>{x.v}</div></div></div></div>)}</div></div>
 <div className="cd"><div className="ch"><span className="ct">Ringkasan Karyawan</span></div><div className="tw"><table><thead><tr><th>Nama</th><th>Jabatan</th><th>Gaji Tgl</th><th>Sisa Cuti</th><th>SP</th></tr></thead><tbody>{em.map((e,i)=>{const cu=CQ-cU(e.id),spp=aS(e.id);return <tr key={e.id}><td><div className="er"><div className="av" style={{background:AV[i%9]}}>{e.n[0]}</div><span style={{fontWeight:600}}>{e.n}</span></div></td><td style={{color:"#64748b"}}>{e.p}</td><td><span style={bg("cuti")}>Tgl {e.pd}</span></td><td style={{fontWeight:600,color:cu<=3?"#ef4444":"#16a34a"}}>{cu}/{CQ}</td><td>{spp.length?spp.map(s=><span key={s.id} style={{...bg("sp"+s.lv),marginRight:3}}>SP{s.lv}</span>):"-"}</td></tr>;})}</tbody></table></div></div>
 {pN>0&&<div className="cd"><div className="ch"><span className="ct">Menunggu Approval</span><span className="nb">{pN}</span></div><div className="tw"><table><thead><tr><th>Nama</th><th>Tipe</th><th>Tanggal</th><th>Alasan</th><th>Aksi</th></tr></thead><tbody>{lv.filter(l=>l.st==="Pending").map(l=><tr key={l.id}><td style={{fontWeight:600}}>{l.en}</td><td><span style={bg(l.t.toLowerCase())}>{l.t}</span></td><td>{l.s}</td><td style={{maxWidth:140,whiteSpace:"normal",fontSize:12}}>{l.r}</td><td><div style={{display:"flex",gap:4}}><button className="btn bs" onClick={()=>{sLv(p=>p.map(x=>x.id===l.id?{...x,st:"Approved"}:x));su("leaves",{status:"Approved"},"id=eq."+l.id);}}><Check size={12}/></button><button className="btn bd bs" onClick={()=>{sLv(p=>p.map(x=>x.id===l.id?{...x,st:"Rejected"}:x));su("leaves",{status:"Rejected"},"id=eq."+l.id);}}><X size={12}/></button></div></td></tr>)}</tbody></table></div></div>}</>;};
@@ -251,7 +271,8 @@ return <div className="cd"><div className="ch"><span className="ct">Rekap Period
 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>{em.map(e=><button key={e.id} className={"btn bs "+(sls===e.id?"":"bo")} style={sls===e.id?{background:BR,color:"#fff"}:{}} onClick={()=>sSls(sls===e.id?"":e.id)}>{e.n}</button>)}</div>
 {emp&&rc&&<><div style={{background:BL,borderRadius:14,padding:16,marginBottom:16,border:"1px solid rgba(175,25,23,.08)"}}><div className="er" style={{marginBottom:8}}><div className="av" style={{background:BR,width:40,height:40,fontSize:16}}>{emp.n[0]}</div><div><div style={{fontWeight:700,fontSize:16}}>{emp.n}</div><div style={{fontSize:12,color:"#64748b"}}>{emp.p} — Gaji tgl {emp.pd}</div><div style={{fontSize:12,color:BR,fontWeight:600,marginTop:2}}>Periode: {prd}</div></div></div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8}}>{[{l:"Kehadiran",v:rc.h,c:"#16a34a"},{l:"Terlambat",v:rc.t,c:"#ca8a04"},{l:"Alpha",v:rc.a,c:"#ef4444"},{l:"Lembur",v:fj(rc.ol),c:"#d97706"},{l:"Lembur Libur",v:fj(rc.ow),c:"#c2410c"},{l:"Sisa Cuti",v:(CQ-cU(emp.id))+"/"+CQ,c:"#2563eb"}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:10,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:x.c}}>{x.v}</div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{x.l}</div></div>)}</div></div>
-<div className="tw"><table><thead><tr><th>Tgl</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th></tr></thead><tbody>{(()=>{const pr2=getPR(emp.pd);const ds=[];for(let dt=new Date(pr2.sd);dt<=pr2.ed;dt.setDate(dt.getDate()+1)){ds.push(new Date(dt));}return ds.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const a=gA(emp.id,d);const we=w===0||w===6;if(we&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.25}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={4} style={{color:"#cbd5e1"}}>Libur</td></tr>;return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td><span style={bg(a.st)}>{a.st}</span></td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}</span>:"-"}</td></tr>;});})()}</tbody></table></div></>}</div>;};
+<div className="tw"><table><thead><tr><th>Tgl</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th><th>Edit</th></tr></thead><tbody>{(()=>{const pr2=getPR(emp.pd);const ds=[];for(let dt=new Date(pr2.sd);dt<=pr2.ed;dt.setDate(dt.getDate()+1)){ds.push(new Date(dt));}return ds.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const a=gA(emp.id,d);const we=w===0||w===6;if(we&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.25}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={5} style={{color:"#cbd5e1"}}>Libur</td></tr>;const ds2=dt.toISOString().slice(0,10);const isFut=new Date(dt)>new Date(new Date().setHours(0,0,0,0));
+return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td>{isFut?<span style={{color:"#cbd5e1"}}>—</span>:<span style={bg(a.st==="Hadir"||a.st==="Terlambat"?"hadir":a.st.toLowerCase())}>{a.st}</span>}</td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}</span>:"-"}</td>{!isFut&&<td><select className="inp" value={manAtt[emp.id+"-"+ds2]||""} onChange={e=>{const v=e.target.value;if(v)setAtt(emp.id,ds2,v);else{sManAtt(p=>{const n={...p};delete n[emp.id+"-"+ds2];return n;});}}} style={{width:90,padding:"4px 6px",fontSize:11}}><option value="">Auto</option><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Cuti">Cuti</option><option value="Alpha">Alpha</option></select></td>}</tr>;});})()}</tbody></table></div></>}</div>;};
 
 const APay=()=>{const sel=sls||em[0]?.id;const pds=eSP(sel);
 return <><div className="cd"><div className="ch"><span className="ct">Slip Gaji</span><select className="inp" style={{fontWeight:600,width:"auto",maxWidth:200}} value={sel} onChange={e=>sSls(e.target.value)}>{em.map(e=><option key={e.id} value={e.id}>{e.n}</option>)}</select></div>
