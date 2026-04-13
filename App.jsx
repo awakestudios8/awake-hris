@@ -26,6 +26,8 @@ const su=async(t,d,q)=>{try{await fetch(SUPA+"/rest/v1/"+t+"?"+q,{method:"PATCH"
 const sd=async(t,q)=>{try{await fetch(SUPA+"/rest/v1/"+t+"?"+q,{method:"DELETE",headers:SH});}catch(e){}};
 const p2=n=>String(n).padStart(2,"0");
 const MN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const HOLIDAYS={"2026-01-01":"Tahun Baru","2026-01-29":"Isra Miraj","2026-02-18":"Tahun Baru Imlek","2026-03-20":"Hari Raya Nyepi","2026-03-22":"Cuti Bersama Nyepi","2026-04-03":"Wafat Isa Almasih","2026-04-05":"Paskah","2026-05-01":"Hari Buruh","2026-05-16":"Waisak","2026-05-21":"Kenaikan Isa Almasih","2026-06-01":"Hari Lahir Pancasila","2026-06-17":"Idul Adha","2026-07-07":"Tahun Baru Islam","2026-08-17":"Kemerdekaan RI","2026-09-16":"Maulid Nabi","2026-12-25":"Natal","2026-12-26":"Cuti Bersama Natal"};
+const isHoliday=(dt)=>{if(!dt)return false;const k=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');return HOLIDAYS[k]||false;};
 const rj=n=>Math.round(n*10)/10; // round to 1 decimal, no floating mess
 const gM=()=>({});
 const otBrk=(mins)=>{if(mins>240)return 60;if(mins>120)return 30;return 0;}; // overtime break: >4h=60m, >2h=30m
@@ -141,10 +143,10 @@ sf("daily_status"),
 ]);
 if(emps?.length){const mapped=emps.map(e=>({id:e.id,n:e.name,d:e.department,p:e.position,pd:e.pay_date,s:e.salary}));sEm(mapped);const ap={};mapped.forEach(e=>{ap[e.id]={};});sAP(ap);}
 if(accs?.length)sAc(accs.map(a=>({id:a.id,u:a.username,p:a.password,r:a.role,e:a.employee_id})));
-if(lvs?.length)sLv(lvs.map(l=>({id:l.id,ei:l.employee_id,en:l.employee_name,t:l.type,s:l.start_date,e:l.end_date,d:l.days,r:l.reason,st:l.status})));
+if(lvs?.length)sLv(lvs.map(l=>({id:l.id,ei:l.employee_id,en:l.employee_name,t:l.type,s:String(l.start_date).slice(0,10),e:String(l.end_date).slice(0,10),d:l.days,r:l.reason,st:l.status})));
 if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s.level,r:s.reason,dt:s.issued_date,ex:s.expiry_date})));
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
-if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:o.date,jam:o.hours,ket:o.notes})));
+if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:String(o.date).slice(0,10),jam:Number(o.hours),ket:o.notes})));
 console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);ma[a.employee_id+"-"+dd]=a.status||"Hadir";});console.log("manAtt keys:",Object.keys(ma));sManAtt(ma);}
 }catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
 
@@ -164,8 +166,8 @@ if(dateKey&&manAtt[dateKey]){const ms=manAtt[dateKey];return{...none,st:ms,ci:ms
 if(checkDt){const ds=checkDt.getFullYear()+'-'+String(checkDt.getMonth()+1).padStart(2,'0')+'-'+String(checkDt.getDate()).padStart(2,'0');const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&ds>=l.s&&ds<=l.e);if(leave)return{...none,st:leave.t};}
 /* 4. Punch data from Deli machine */
 const r=pP(aP[ei]?.[d],dp[ei+"-"+d]);const ok=ei+"-"+d;if(ovr[ok]?.oh!==undefined)r.oh=ovr[ok].oh;if(ovr[ok]?.obk!==undefined)r.obk=ovr[ok].obk;
-/* 5. If still Alpha, check if it's Sunday (holiday) */
-if(r.st==="Alpha"&&checkDt){const w=checkDt.getDay();if(w===0)return{...r,st:"-"};}
+/* 5. If Sunday or public holiday */
+if(checkDt){const w=checkDt.getDay();const hol=isHoliday(checkDt);if(w===0||hol){if(r.st==="Alpha")return{...r,st:"-"};}}
 /* 6. Check if overtime was manually input for this date */
 if(checkDt){const ds2=checkDt.getFullYear()+'-'+String(checkDt.getMonth()+1).padStart(2,'0')+'-'+String(checkDt.getDate()).padStart(2,'0');const ot=lbr.find(o=>o.ei===ei&&o.tgl===ds2);if(ot){r.oh=ot.jam;}}
 return r;};
@@ -173,14 +175,20 @@ const tD=(ei,d)=>{const k=ei+"-"+d;sDp(p=>({...p,[k]:!p[k]}));};
 const cU=(ei)=>lv.filter(l=>l.ei===ei&&l.t==="Cuti"&&l.st==="Approved").reduce((a,l)=>a+l.d,0);
 const aS=(ei)=>sp.filter(s=>s.ei===ei&&new Date(s.ex)>new Date());
 const pN=lv.filter(l=>l.st==="Pending").length;
-const pR=(ei,pd)=>{let h=0,t=0,a=0,ol=0,ow=0;
+const pR=(ei,pd)=>{let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0;
 const pr=getPR(pd);const today=new Date();today.setHours(0,0,0,0);
 for(let dt=new Date(pr.sd);dt<=pr.ed;dt.setDate(dt.getDate()+1)){
 const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today)continue;
-const d=dt.getDate();const w=dt.getDay();if(w===0){const at=gA(ei,d,new Date(dt));if(at.wt)ow=rj(ow+at.oh);continue;}
-const at=gA(ei,d,new Date(dt));if(at.st==="Hadir"||at.st==="Terlambat")h++;else if(at.st==="Alpha")a++;
-if(at.st==="Terlambat")t++;if(!at.wt)ol=rj(ol+at.oh);
-}return{h,t,a,ol,ow};};
+const d=dt.getDate();const w=dt.getDay();const hol=isHoliday(chk);
+if(w===0||hol){const at=gA(ei,d,new Date(dt));if(at.oh>0)ow=rj(ow+at.oh);continue;}
+const at=gA(ei,d,new Date(dt));
+if(at.st==="Hadir"||at.st==="Terlambat")h++;
+else if(at.st==="Alpha")a++;
+else if(at.st==="Sakit")sk++;
+else if(at.st==="Izin")iz++;
+if(at.st==="Terlambat")t++;
+if(at.oh>0&&!hol&&w!==0)ol=rj(ol+at.oh);
+}return{h,t,a,ol,ow,iz,sk};};
 const[savMsg,sSavMsg]=useState("");
 const setAtt=(ei,dateStr,status)=>{const k=ei+"-"+dateStr;sManAtt(p=>({...p,[k]:status}));
 sSavMsg("Menyimpan...");
@@ -252,7 +260,7 @@ return <div style={{maxWidth:520,margin:"0 auto"}}>
 
 {/* 3 key stats */}
 <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:16}}>
-{[{l:"Kehadiran",sub:"termasuk terlambat",v:rc.h,c:"#16a34a",Ic:UserCheck},{l:"Terlambat",sub:"periode ini",v:rc.t,c:"#ca8a04",Ic:Clock},{l:"Total Lembur",sub:"kerja + libur",v:fj(rj(rc.ol+rc.ow)),c:"#d97706",Ic:TrendingUp},{l:"Sisa Cuti",sub:"dari "+CQ+" hari",v:cu<=3?cu+"/"+CQ:cu+"/"+CQ,c:cu<=3?"#ef4444":"#2563eb",Ic:Coffee}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}>
+{[{l:"Kehadiran",sub:"termasuk terlambat",v:rc.h,c:"#16a34a",Ic:UserCheck},{l:"Sakit/Izin",sub:"periode ini",v:rc.sk+rc.iz,c:"#7c3aed",Ic:Clock},{l:"Total Lembur",sub:"kerja + libur",v:fj(rj(rc.ol+rc.ow)),c:"#d97706",Ic:TrendingUp},{l:"Sisa Cuti",sub:"dari "+CQ+" hari",v:cu<=3?cu+"/"+CQ:cu+"/"+CQ,c:cu<=3?"#ef4444":"#2563eb",Ic:Coffee}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}>
 <div style={{width:36,height:36,borderRadius:10,background:x.c+"12",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}><x.Ic size={18} color={x.c}/></div>
 <div style={{fontSize:24,fontWeight:700,color:x.c}}>{x.v}</div>
 <div style={{fontSize:11,color:"#94a3b8"}}>{x.l}</div>
@@ -282,8 +290,8 @@ const ACal=()=>{const emp=sls?em.find(e=>e.id===sls):null;const rc=emp?pR(emp.id
 return <div className="cd"><div className="ch"><span className="ct">Rekap Periode Gaji</span></div>
 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>{em.map(e=><button key={e.id} className={"btn bs "+(sls===e.id?"":"bo")} style={sls===e.id?{background:BR,color:"#fff"}:{}} onClick={()=>sSls(sls===e.id?"":e.id)}>{e.n}</button>)}</div>
 {emp&&rc&&<><div style={{background:BL,borderRadius:14,padding:16,marginBottom:16,border:"1px solid rgba(175,25,23,.08)"}}><div className="er" style={{marginBottom:8}}><div className="av" style={{background:BR,width:40,height:40,fontSize:16}}>{emp.n[0]}</div><div><div style={{fontWeight:700,fontSize:16}}>{emp.n}</div><div style={{fontSize:12,color:"#64748b"}}>{emp.p} — Gaji tgl {emp.pd}</div><div style={{fontSize:12,color:BR,fontWeight:600,marginTop:2}}>Periode: {prd}</div></div></div>
-{savMsg&&<div style={{padding:"8px 14px",borderRadius:10,fontSize:12,fontWeight:600,marginBottom:10,background:savMsg.includes("GAGAL")?"#fef2f2":savMsg.includes("✓")?"#f0fdf4":"#fefce8",color:savMsg.includes("GAGAL")?"#dc2626":savMsg.includes("✓")?"#16a34a":"#ca8a04"}}>{savMsg}</div>}<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8}}>{[{l:"Kehadiran",v:rc.h,c:"#16a34a"},{l:"Terlambat",v:rc.t,c:"#ca8a04"},{l:"Alpha",v:rc.a,c:"#ef4444"},{l:"Lembur",v:fj(rc.ol),c:"#d97706"},{l:"Lembur Libur",v:fj(rc.ow),c:"#c2410c"},{l:"Sisa Cuti",v:(CQ-cU(emp.id))+"/"+CQ,c:"#2563eb"}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:10,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:x.c}}>{x.v}</div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{x.l}</div></div>)}</div></div>
-<div className="tw"><table><thead><tr><th>Tgl</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th><th>Edit</th></tr></thead><tbody>{(()=>{const pr2=getPR(emp.pd);const ds=[];for(let dt=new Date(pr2.sd);dt<=pr2.ed;dt.setDate(dt.getDate()+1)){ds.push(new Date(dt));}return ds.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const a=gA(emp.id,d,new Date(dt));const we=w===0;if(we&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.25}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={5} style={{color:"#cbd5e1"}}>Libur</td></tr>;const ds2=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const isFut=new Date(dt)>new Date(new Date().setHours(0,0,0,0));
+{savMsg&&<div style={{padding:"8px 14px",borderRadius:10,fontSize:12,fontWeight:600,marginBottom:10,background:savMsg.includes("GAGAL")?"#fef2f2":savMsg.includes("✓")?"#f0fdf4":"#fefce8",color:savMsg.includes("GAGAL")?"#dc2626":savMsg.includes("✓")?"#16a34a":"#ca8a04"}}>{savMsg}</div>}<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8}}>{[{l:"Kehadiran",v:rc.h,c:"#16a34a"},{l:"Sakit",v:rc.sk,c:"#dc2626"},{l:"Izin",v:rc.iz,c:"#7c3aed"},{l:"Alpha",v:rc.a,c:"#ef4444"},{l:"Lembur",v:fj(rj(rc.ol+rc.ow)),c:"#d97706"},{l:"Sisa Cuti",v:(CQ-cU(emp.id))+"/"+CQ,c:"#2563eb"}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:10,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:x.c}}>{x.v}</div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{x.l}</div></div>)}</div></div>
+<div className="tw"><table><thead><tr><th>Tgl</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th><th>Edit</th></tr></thead><tbody>{(()=>{const pr2=getPR(emp.pd);const ds=[];for(let dt=new Date(pr2.sd);dt<=pr2.ed;dt.setDate(dt.getDate()+1)){ds.push(new Date(dt));}return ds.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const a=gA(emp.id,d,new Date(dt));const we=w===0;const hol=isHoliday(new Date(dt));if((we||hol)&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.25}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={5} style={{color:"#cbd5e1"}}>{hol||"Libur"}</td></tr>;const ds2=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const isFut=new Date(dt)>new Date(new Date().setHours(0,0,0,0));
 return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td>{isFut?<span style={{color:"#cbd5e1"}}>—</span>:<span style={bg(a.st==="Hadir"||a.st==="Terlambat"?"hadir":a.st.toLowerCase())}>{a.st}</span>}</td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}</span>:"-"}</td>{!isFut&&<td><select className="inp" value={manAtt[emp.id+"-"+ds2]||""} onChange={e=>{const v=e.target.value;if(v)setAtt(emp.id,ds2,v);else{sManAtt(p=>{const n={...p};delete n[emp.id+"-"+ds2];return n;});}}} style={{width:90,padding:"4px 6px",fontSize:11}}><option value="">Auto</option><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Cuti">Cuti</option><option value="Alpha">Alpha</option></select></td>}</tr>;});})()}</tbody></table></div></>}</div>;};
 
 const APay=()=>{const sel=sls||em[0]?.id;const pds=eSP(sel);
@@ -363,7 +371,7 @@ const AUp=()=><div className="cd"><div className="ch"><span className="ct">Uploa
 </div></div>;
 
 const EAtt=()=>{if(!le)return null;const pr=getPR(le.pd);const days=[];for(let dt=new Date(pr.ed);dt>=pr.sd;dt.setDate(dt.getDate()-1)){days.push(new Date(dt));}const today2=new Date();today2.setHours(0,0,0,0);
-return <div className="cd"><div className="ch"><span className="ct">Kehadiran</span></div><div style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>Periode: <strong style={{color:"#0f172a"}}>{pLbl(le.pd)}</strong></div><div className="tw"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th></tr></thead><tbody>{days.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today2)return null;const a=gA(le.id,d,new Date(dt));const we=w===0;if(we&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.3}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={4} style={{color:"#cbd5e1"}}>Libur</td></tr>;if(a.st==="-")return null;return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td><span style={bg(a.st.toLowerCase())}>{a.st}</span></td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}{a.obk>0?" (-"+a.obk+"m istirahat)":""}</span>:"-"}</td></tr>;}).filter(Boolean)}</tbody></table></div></div>;};
+return <div className="cd"><div className="ch"><span className="ct">Kehadiran</span></div><div style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>Periode: <strong style={{color:"#0f172a"}}>{pLbl(le.pd)}</strong></div><div className="tw"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th></tr></thead><tbody>{days.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today2)return null;const a=gA(le.id,d,new Date(dt));const we=w===0;const hol=isHoliday(new Date(dt));if((we||hol)&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.3}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={4} style={{color:"#cbd5e1"}}>{hol||"Libur"}</td></tr>;if(a.st==="-")return null;return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td><span style={bg(a.st.toLowerCase())}>{a.st}</span></td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}{a.obk>0?" (-"+a.obk+"m istirahat)":""}</span>:"-"}</td></tr>;}).filter(Boolean)}</tbody></table></div></div>;};
 
 const EPay=()=>{if(!le)return null;const pds=eSP(le.id);return <div className="cd"><div className="ch"><span className="ct">Slip Gaji</span></div>{pds.length===0?<div style={{textAlign:"center",padding:24,color:"#94a3b8"}}>Belum ada slip gaji.</div>:pds.map(p=><SlipVw key={p} ei={le.id} pr={p} dt={sl[le.id][p]} adm={false} onEd={()=>{}} onDl={()=>{}}/>)}</div>;};
 
