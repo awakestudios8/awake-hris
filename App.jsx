@@ -148,7 +148,9 @@ if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:String(o.date).slice(0,10),jam:Number(o.hours),ket:o.notes})));
 console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);ma[a.employee_id+"-"+dd]=a.status||"Hadir";});console.log("manAtt keys:",Object.keys(ma));sManAtt(ma);}
-}catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
+}catch(err){console.error("Load error:",err);}
+try{const ss=sessionStorage.getItem("hris_session");if(ss){const s=JSON.parse(ss);const a2=accs?.length?accs.find(x=>x.username===s.u):null;if(a2){if(s.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");}else{const empD=emps?.length?emps.find(x=>x.id===s.eid||x.id===a2.employee_id):null;if(empD){sLe({id:empD.id,n:empD.name,d:empD.department,p:empD.position,pd:empD.pay_date,s:empD.salary});sRl("employee");sVw("emp-dash");sPg("app");}}}}}catch(e){}
+sLd(false);})();},[]);
 
 
 
@@ -210,7 +212,7 @@ return <><style>{css}</style><div className="abg"><div className="abx">
 <label className="lb">Username</label><input className="inp" value={lf.u} onChange={e=>sLf(p=>({...p,u:e.target.value}))} placeholder="Masukkan username"/>
 <label className="lb">Password</label><input className="inp" type="password" value={lf.p} onChange={e=>sLf(p=>({...p,p:e.target.value}))} placeholder="Masukkan password"/>
 {ae&&<div className="aer">{ae}</div>}
-<button className="asb" onClick={()=>{if(!ac.length){sAe("Gagal terhubung ke database. Pastikan tabel accounts sudah dibuat di Supabase.");return;}const a=ac.find(x=>x.u===lf.u&&x.p===lf.p);if(!a){sAe("Username atau password salah");return;}if(a.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");}else{sLe(em.find(x=>x.id===a.e));sRl("employee");sVw("emp-dash");sPg("app");}}}>Masuk</button>
+<button className="asb" onClick={()=>{if(!ac.length){sAe("Gagal terhubung ke database. Pastikan tabel accounts sudah dibuat di Supabase.");return;}const a=ac.find(x=>x.u===lf.u&&x.p===lf.p);if(!a){sAe("Username atau password salah");return;}if(a.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"admin",u:a.u}));}catch(e){}}else{const empData=em.find(x=>x.id===a.e);sLe(empData);sRl("employee");sVw("emp-dash");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"employee",u:a.u,eid:a.e}));}catch(e){}}}}>Masuk</button>
 <div style={{textAlign:"center",marginTop:12,fontSize:12,color:"#94a3b8"}}>Akun dibuat oleh admin perusahaan</div>
 </div></div></div></>;
 }
@@ -417,7 +419,7 @@ return <><style>{css}</style><div className="ly">
 <aside className={"sb"+(so?" op":"")}>
 <div style={{padding:"4px 8px 16px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid #eef1f5",marginBottom:12}}><img src={LR} alt="" style={{width:32}}/><div><div style={{fontSize:14,fontWeight:700,letterSpacing:"-0.02em"}}>Awake HRIS</div><div style={{fontSize:10,color:"#94a3b8"}}>{rl==="admin"?"Admin":"Karyawan"}</div></div></div>
 {nav.map(n=>{const NI=n.ic;return <button key={n.id} className={"ni"+(vw===n.id?" act":"")} onClick={()=>{sVw(n.id);sSo(false);sAe("");}}><NI size={18}/><span>{n.l}</span>{n.id==="leave"&&pN>0&&rl==="admin"&&<span className="nb">{pN}</span>}</button>;})}
-<div style={{marginTop:"auto",borderTop:"1px solid #eef1f5",paddingTop:8}}><button className="ni" onClick={()=>{sPg("login");sRl(null);sLe(null);sAe("");sLf({u:"",p:""});}}><LogOut size={18}/>Logout</button></div>
+<div style={{marginTop:"auto",borderTop:"1px solid #eef1f5",paddingTop:8}}><button className="ni" onClick={()=>{sPg("login");sRl(null);sLe(null);sAe("");sLf({u:"",p:""});try{sessionStorage.removeItem("hris_session");}catch(e){}}}><LogOut size={18}/>Logout</button></div>
 <div style={{padding:8,display:"flex",alignItems:"center",gap:8,background:"#f8f9fb",borderRadius:10,marginTop:8}}><div className="av" style={{background:BR}}>{rl==="admin"?"A":le?.n[0]}</div><div><div style={{fontSize:13,fontWeight:600}}>{rl==="admin"?"Admin":le?.n}</div><div style={{fontSize:11,color:"#94a3b8"}}>{rl==="admin"?"Super Admin":le?.p}</div></div></div>
 </aside>
 <main className="mn"><div className="tb"><div style={{display:"flex",alignItems:"center",gap:10}}><button className="mb" onClick={()=>sSo(true)}><Menu size={22}/></button><h1>{titles[vw]}</h1></div>
