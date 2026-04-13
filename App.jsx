@@ -137,7 +137,7 @@ sf("leaves","?order=created_at.desc"),
 sf("warnings","?order=issued_date.desc"),
 sf("payslips"),
 sf("overtime","?order=date.desc"),
-sf("attendance"),
+sf("daily_status"),
 ]);
 if(emps?.length){const mapped=emps.map(e=>({id:e.id,n:e.name,d:e.department,p:e.position,pd:e.pay_date,s:e.salary}));sEm(mapped);const ap={};mapped.forEach(e=>{ap[e.id]={};});sAP(ap);}
 if(accs?.length)sAc(accs.map(a=>({id:a.id,u:a.username,p:a.password,r:a.role,e:a.employee_id})));
@@ -145,7 +145,7 @@ if(lvs?.length)sLv(lvs.map(l=>({id:l.id,ei:l.employee_id,en:l.employee_name,t:l.
 if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s.level,r:s.reason,dt:s.issued_date,ex:s.expiry_date})));
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:o.date,jam:o.hours,ket:o.notes})));
-if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);ma[a.employee_id+"-"+dd]=a.clock_in||"Hadir";});sManAtt(ma);}
+if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);ma[a.employee_id+"-"+dd]=a.status||"Hadir";});sManAtt(ma);}
 }catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
 
 
@@ -182,7 +182,7 @@ const at=gA(ei,d,new Date(dt));if(at.st==="Hadir"||at.st==="Terlambat")h++;else 
 if(at.st==="Terlambat")t++;if(!at.wt)ol=rj(ol+at.oh);
 }return{h,t,a,ol,ow};};
 const setAtt=(ei,dateStr,status)=>{const k=ei+"-"+dateStr;sManAtt(p=>({...p,[k]:status}));
-fetch(SUPA+"/rest/v1/attendance",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,clock_in:status})}).catch(()=>{});};
+fetch(SUPA+"/rest/v1/daily_status",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,status:status})}).catch(()=>{});};
 
 const svSl=(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));fetch(SUPA+"/rest/v1/payslips",{method:"POST",headers:{...SH,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})});};
 const eSP=ei=>Object.keys(sl[ei]||{}).sort().reverse();
