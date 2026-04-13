@@ -157,19 +157,23 @@ const none={st:"-",ci:null,co:null,oi:null,oo:null,oh:0,obk:0,la:false,lm:0,wt:f
 const today=new Date();today.setHours(0,0,0,0);
 const checkDt=dt?new Date(dt):null;
 if(checkDt){checkDt.setHours(0,0,0,0);}
+const fmtDt=(x)=>x?x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'):null;
+const dateStr=fmtDt(checkDt);
+/* Helper: get overtime hours for this date */
+const getOT=()=>{if(!dateStr)return 0;const ot=lbr.find(o=>o.ei===ei&&o.tgl===dateStr);return ot?Number(ot.jam):0;};
 /* 1. Future date */
 if(checkDt&&checkDt>today)return none;
-/* 2. Manual attendance override from Rekap Periode edit */
-const dateKey=dt?ei+'-'+dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'):null;
-if(dateKey&&manAtt[dateKey]){const ms=manAtt[dateKey];return{...none,st:ms,ci:ms==="Hadir"?"08:00":null,co:ms==="Hadir"?"17:00":null};}
-/* 3. Check approved leaves (Cuti/Sakit/Izin) */
-if(checkDt){const ds=checkDt.getFullYear()+'-'+String(checkDt.getMonth()+1).padStart(2,'0')+'-'+String(checkDt.getDate()).padStart(2,'0');const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&ds>=l.s&&ds<=l.e);if(leave)return{...none,st:leave.t};}
-/* 4. Punch data from Deli machine */
+/* 2. Manual attendance override */
+const dateKey=dateStr?ei+'-'+dateStr:null;
+if(dateKey&&manAtt[dateKey]){const ms=manAtt[dateKey];return{...none,st:ms,ci:ms==="Hadir"?"08:00":null,co:ms==="Hadir"?"17:00":null,oh:getOT()};}
+/* 3. Approved leaves */
+if(dateStr){const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&dateStr>=l.s&&dateStr<=l.e);if(leave)return{...none,st:leave.t,oh:getOT()};}
+/* 4. Punch data */
 const r=pP(aP[ei]?.[d],dp[ei+"-"+d]);const ok=ei+"-"+d;if(ovr[ok]?.oh!==undefined)r.oh=ovr[ok].oh;if(ovr[ok]?.obk!==undefined)r.obk=ovr[ok].obk;
-/* 5. If Sunday or public holiday */
-if(checkDt){const w=checkDt.getDay();const hol=isHoliday(checkDt);if(w===0||hol){if(r.st==="Alpha")return{...r,st:"-"};}}
-/* 6. Check if overtime was manually input for this date */
-if(checkDt){const ds2=checkDt.getFullYear()+'-'+String(checkDt.getMonth()+1).padStart(2,'0')+'-'+String(checkDt.getDate()).padStart(2,'0');const ot=lbr.find(o=>o.ei===ei&&o.tgl===ds2);if(ot){r.oh=ot.jam;}}
+/* 5. Sunday or public holiday */
+if(checkDt){const w=checkDt.getDay();const hol=isHoliday(checkDt);if(w===0||hol){const otH=getOT();if(r.st==="Alpha")return{...none,st:"-",oh:otH,wt:otH>0};if(otH>0)r.oh=Math.max(r.oh,otH);}}
+/* 6. Regular day overtime */
+const otH2=getOT();if(otH2>0&&r.oh===0)r.oh=otH2;
 return r;};
 const tD=(ei,d)=>{const k=ei+"-"+d;sDp(p=>({...p,[k]:!p[k]}));};
 const cU=(ei)=>lv.filter(l=>l.ei===ei&&l.t==="Cuti"&&l.st==="Approved").reduce((a,l)=>a+l.d,0);
