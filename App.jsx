@@ -145,12 +145,12 @@ if(lvs?.length)sLv(lvs.map(l=>({id:l.id,ei:l.employee_id,en:l.employee_name,t:l.
 if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s.level,r:s.reason,dt:s.issued_date,ex:s.expiry_date})));
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:o.date,jam:o.hours,ket:o.notes})));
-if(atts?.length){const ma={};atts.forEach(a=>{ma[a.employee_id+"-"+a.date]=a.clock_in||"Hadir";});sManAtt(ma);}
+if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);ma[a.employee_id+"-"+dd]=a.clock_in||"Hadir";});sManAtt(ma);}
 }catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
 
 
 
-const gA=useCallback((ei,d,dt)=>{
+const gA=(ei,d,dt)=>{
 const none={st:"-",ci:null,co:null,oi:null,oo:null,oh:0,obk:0,la:false,lm:0,wt:false};
 const today=new Date();today.setHours(0,0,0,0);
 const checkDt=dt?new Date(dt):null;
@@ -168,19 +168,19 @@ const r=pP(aP[ei]?.[d],dp[ei+"-"+d]);const ok=ei+"-"+d;if(ovr[ok]?.oh!==undefine
 if(r.st==="Alpha"&&checkDt){const w=checkDt.getDay();if(w===0)return{...r,st:"-"};}
 /* 6. Check if overtime was manually input for this date */
 if(checkDt){const ds2=checkDt.getFullYear()+'-'+String(checkDt.getMonth()+1).padStart(2,'0')+'-'+String(checkDt.getDate()).padStart(2,'0');const ot=lbr.find(o=>o.ei===ei&&o.tgl===ds2);if(ot){r.oh=ot.jam;}}
-return r;},[aP,dp,ovr,manAtt,lv,lbr]);
+return r;};
 const tD=(ei,d)=>{const k=ei+"-"+d;sDp(p=>({...p,[k]:!p[k]}));};
-const cU=useCallback(ei=>lv.filter(l=>l.ei===ei&&l.t==="Cuti"&&l.st==="Approved").reduce((a,l)=>a+l.d,0),[lv]);
-const aS=useCallback(ei=>sp.filter(s=>s.ei===ei&&new Date(s.ex)>new Date()),[sp]);
+const cU=(ei)=>lv.filter(l=>l.ei===ei&&l.t==="Cuti"&&l.st==="Approved").reduce((a,l)=>a+l.d,0);
+const aS=(ei)=>sp.filter(s=>s.ei===ei&&new Date(s.ex)>new Date());
 const pN=lv.filter(l=>l.st==="Pending").length;
-const pR=useCallback((ei,pd)=>{let h=0,t=0,a=0,ol=0,ow=0;
+const pR=(ei,pd)=>{let h=0,t=0,a=0,ol=0,ow=0;
 const pr=getPR(pd);const today=new Date();today.setHours(0,0,0,0);
 for(let dt=new Date(pr.sd);dt<=pr.ed;dt.setDate(dt.getDate()+1)){
 const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today)continue;
 const d=dt.getDate();const w=dt.getDay();if(w===0){const at=gA(ei,d,new Date(dt));if(at.wt)ow=rj(ow+at.oh);continue;}
 const at=gA(ei,d,new Date(dt));if(at.st==="Hadir"||at.st==="Terlambat")h++;else if(at.st==="Alpha")a++;
 if(at.st==="Terlambat")t++;if(!at.wt)ol=rj(ol+at.oh);
-}return{h,t,a,ol,ow};},[gA]);
+}return{h,t,a,ol,ow};};
 const setAtt=(ei,dateStr,status)=>{const k=ei+"-"+dateStr;sManAtt(p=>({...p,[k]:status}));
 fetch(SUPA+"/rest/v1/attendance",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,clock_in:status})}).catch(()=>{});};
 
