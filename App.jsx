@@ -148,9 +148,9 @@ if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:String(o.date).slice(0,10),jam:Number(o.hours),ket:o.notes})));
 console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);ma[a.employee_id+"-"+dd]=a.status||"Hadir";});console.log("manAtt keys:",Object.keys(ma));sManAtt(ma);}
-}catch(err){console.error("Load error:",err);}
+/* Auto-login from session */
 try{const ss=sessionStorage.getItem("hris_session");if(ss){const s=JSON.parse(ss);const a2=accs?.length?accs.find(x=>x.username===s.u):null;if(a2){if(s.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");}else{const empD=emps?.length?emps.find(x=>x.id===s.eid||x.id===a2.employee_id):null;if(empD){sLe({id:empD.id,n:empD.name,d:empD.department,p:empD.position,pd:empD.pay_date,s:empD.salary});sRl("employee");sVw("emp-dash");sPg("app");}}}}}catch(e){}
-sLd(false);})();},[]);
+}catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
 
 
 
