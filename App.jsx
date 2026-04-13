@@ -196,7 +196,7 @@ if(at.oh>0&&!hol&&w!==0)ol=rj(ol+at.oh);
 const[savMsg,sSavMsg]=useState("");
 const setAtt=(ei,dateStr,status)=>{const k=ei+"-"+dateStr;sManAtt(p=>({...p,[k]:status}));
 sSavMsg("Menyimpan...");
-fetch(SUPA+"/rest/v1/daily_status",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,status:status})}).then(async r=>{if(!r.ok){const t=await r.text();sSavMsg("GAGAL: "+r.status+" - Pastikan tabel daily_status sudah dibuat");console.error("Save FAILED:",r.status,t);}else{sSavMsg("Tersimpan ✓");setTimeout(()=>sSavMsg(""),2000);}}).catch(e=>{sSavMsg("Error koneksi");console.error("Save error:",e);});};
+fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,status:status})}).then(async r=>{if(!r.ok){const t=await r.text();sSavMsg("GAGAL: "+r.status+" - "+t);console.error("Save FAILED:",r.status,t);}else{sSavMsg("Tersimpan ✓");setTimeout(()=>sSavMsg(""),2000);}}).catch(e=>{sSavMsg("Error koneksi");console.error("Save error:",e);});};
 
 const svSl=(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));fetch(SUPA+"/rest/v1/payslips",{method:"POST",headers:{...SH,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})});};
 const eSP=ei=>Object.keys(sl[ei]||{}).sort().reverse();
