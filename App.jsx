@@ -152,15 +152,7 @@ console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length)
 if(disps?.length){const dd2={};disps.forEach(d2=>{if(d2.granted){const dk=d2.employee_id+"-"+String(d2.date).slice(0,10);dd2[dk]=true;}});sDp(dd2);}
 /* Auto-login from session */
 try{const ss=sessionStorage.getItem("hris_session");if(ss){const s=JSON.parse(ss);const uname=s.u;let decoded;try{decoded=atob(uname);}catch(e){decoded=uname;}const a2=accs?.length?accs.find(x=>x.username===decoded||x.username===uname):null;if(a2){if(s.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");}else{const empD=emps?.length?emps.find(x=>x.id===s.eid||x.id===a2.employee_id):null;if(empD){sLe({id:empD.id,n:empD.name,d:empD.department,p:empD.position,pd:empD.pay_date,s:empD.salary});sRl("employee");sVw("emp-dash");sPg("app");}}}}}catch(e){}
-}catch(err){console.error("Load error:",err);}
-/* Check if critical tables exist */
-const missing=[];
-if(!emps||!Array.isArray(emps))missing.push("employees");
-if(!accs||!Array.isArray(accs))missing.push("accounts");
-if(!atts||!Array.isArray(atts))missing.push("daily_status");
-if(!disps||!Array.isArray(disps))missing.push("dispensations");
-if(missing.length)console.warn("Missing/empty tables:",missing.join(", "));
-sLd(false);})();},[]);
+}catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
 
 
 
