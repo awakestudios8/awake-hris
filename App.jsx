@@ -130,6 +130,9 @@ const[ee,sEe]=useState(null);const[ef,sEf]=useState({p:"",pd:1,s:0});
 const[sns,sSns]=useState(false);const[snp,sSnp]=useState("");const[sls,sSls]=useState("");const[ups,sUps]=useState("");const[ovr,sOvr]=useState({});const[manAtt,sManAtt]=useState({});const[lbr,sLbr]=useState([]);const[showLbr,sShowLbr]=useState(false);const[lbrF,sLbrF]=useState({ei:"",tgl:"",jam:0,ket:""});const[eLbr,sELbr]=useState(null);const[eLbrF,sELbrF]=useState({jam:0,ket:""});
 const[regF,sRegF]=useState({e:"",u:"",p:""});const[showReg,sShowReg]=useState(false);
 const[chpw,sChpw]=useState({o:"",n:"",c:""});
+const[affData,sAffData]=useState([]);
+const[affMap,sAffMap]=useState({"postervisualid":"1001","posterify":"300306"});
+const[affMapEdit,sAffMapEdit]=useState({acc:"",eid:""});
 
 useEffect(()=>{(async()=>{try{
 const[emps,accs,lvs,sps,pss,otms,atts,disps]=await Promise.all([
@@ -258,10 +261,10 @@ return <div className="slip"><div className="slH"><img src={LR} alt="" style={{w
 {adm&&<div style={{display:"flex",gap:6,marginTop:10}}><button className="btn bo bs" onClick={onEd}><Edit3 size={12}/>Edit</button><button className="btn bd bs" onClick={onDl}><Trash2 size={12}/>Hapus</button></div>}
 </div>;};
 
-const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload}];
-const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key}];
+const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:TrendingUp}];
+const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:TrendingUp}];
 const nav=rl==="admin"?aN:eN;
-const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password"};
+const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
 const EDash=()=>{if(!le)return null;const rc=pR(le.id,le.pd),cu=CQ-cU(le.id),spp=aS(le.id),ml=lv.filter(l=>l.ei===le.id);const prd=pLbl(le.pd);
@@ -510,6 +513,100 @@ const EPw=()=>{if(!le)return null;const myAcc=ac.find(a=>a.e===le.id);
 return <div className="cd"><div className="ch"><span className="ct">Ubah Password</span></div>
 <ChpwForm myAcc={myAcc} ae={ae} onError={sAe} onSubmit={(newPw)=>{sAc(p=>p.map(a=>a.e===le.id?{...a,p:newPw}:a));const myAcc2=ac.find(a=>a.e===le.id);if(myAcc2)su("accounts",{password:newPw},"id=eq."+myAcc2.id);sAe("");}}/></div>;};
 
+
+const AAff=()=>{
+const mapped=affData.filter(a=>affMap[a.account]);
+const unmapped=affData.filter(a=>!affMap[a.account]);
+const leaderboard=mapped.map(a=>{const eid=affMap[a.account];const emp=em.find(e=>e.id===eid);return{...a,eid,empName:emp?.n||"?",empP:emp?.p||""};}).sort((a,b)=>b.revenue-a.revenue);
+const totalRev=leaderboard.reduce((s,a)=>s+a.revenue,0);
+const totalOrd=leaderboard.reduce((s,a)=>s+a.orders,0);
+const totalVid=leaderboard.reduce((s,a)=>s+a.videos,0);
+
+const parseAffXlsx=async(file)=>{
+const XLSX=window.XLSX;if(!XLSX)return;
+const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array"});
+const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws);
+const accs={};
+rows.forEach(r=>{
+const akun=r["Akun TikTok"];if(!akun||akun==="-")return;
+const rev=parseFloat(r["Pendapatan kotor"])||0;
+const ord=parseInt(r["Pesanan SKU"])||0;
+const cost=parseFloat(r["Biaya"])||0;
+const jenis=r["Jenis materi iklan"]||"";
+if(!accs[akun])accs[akun]={account:akun,revenue:0,orders:0,cost:0,videos:0};
+accs[akun].revenue+=rev;accs[akun].orders+=ord;accs[akun].cost+=cost;
+if(jenis==="Video")accs[akun].videos++;
+});
+const arr=Object.values(accs).sort((a,b)=>b.revenue-a.revenue);
+sAffData(arr);
+};
+
+return <div>
+<div className="cd">
+<div className="ch"><span className="ct">Upload Data TikTok</span></div>
+<div className="ua"><label style={{cursor:"pointer",display:"block"}}><input type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(f)parseAffXlsx(f);e.target.value="";}}/><Upload size={28} color={BR} style={{marginBottom:6}}/><div style={{fontWeight:700,fontSize:14}}>Upload .xlsx dari TikTok Seller Center</div><div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>Export creative data for product campaigns</div></label></div>
+</div>
+
+{leaderboard.length>0&&<>
+<div className="cd">
+<div className="ct" style={{marginBottom:12}}>Affiliator Terbaik Bulan Ini</div>
+<div className="sg" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:16}}>
+<div className="sc" style={{textAlign:"center"}}><div style={{fontSize:11,color:"#94a3b8"}}>Total Revenue</div><div style={{fontSize:22,fontWeight:700,color:"#16a34a"}}>{fm(Math.round(totalRev))}</div></div>
+<div className="sc" style={{textAlign:"center"}}><div style={{fontSize:11,color:"#94a3b8"}}>Total Pesanan</div><div style={{fontSize:22,fontWeight:700,color:"#534AB7"}}>{totalOrd}</div></div>
+<div className="sc" style={{textAlign:"center"}}><div style={{fontSize:11,color:"#94a3b8"}}>Total Video</div><div style={{fontSize:22,fontWeight:700,color:"#d97706"}}>{totalVid}</div></div>
+</div>
+
+{leaderboard.length>=1&&<div style={{display:"grid",gridTemplateColumns:leaderboard.length>=3?"1fr 1fr 1fr":leaderboard.length>=2?"1fr 1fr":"1fr",gap:10,marginBottom:16,alignItems:"end"}}>
+{leaderboard.length>=2&&<div style={{background:"#fff",border:"1px solid #eef1f5",borderRadius:14,padding:16,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:"#94a3b8"}}>2</div><div className="av" style={{background:AV[1],width:40,height:40,fontSize:16,margin:"8px auto"}}>{leaderboard[1].empName[0]}</div><div style={{fontWeight:700}}>{leaderboard[1].empName}</div><div style={{fontSize:12,color:"#64748b"}}>{leaderboard[1].account}</div><div style={{fontSize:18,fontWeight:700,color:"#16a34a",marginTop:4}}>{fm(Math.round(leaderboard[1].revenue))}</div><div style={{fontSize:11,color:"#94a3b8"}}>{leaderboard[1].orders} pesanan</div></div>}
+<div style={{background:"linear-gradient(135deg,#fefce8,#fff)",border:"2px solid #d97706",borderRadius:14,padding:20,textAlign:"center"}}><div style={{fontSize:24}}>&#9733;</div><div className="av" style={{background:BR,width:48,height:48,fontSize:20,margin:"8px auto"}}>{leaderboard[0].empName[0]}</div><div style={{fontWeight:800,fontSize:18}}>{leaderboard[0].empName}</div><div style={{fontSize:12,color:"#64748b"}}>{leaderboard[0].account}</div><div style={{fontSize:24,fontWeight:700,color:"#16a34a",marginTop:4}}>{fm(Math.round(leaderboard[0].revenue))}</div><div style={{fontSize:11,color:"#94a3b8"}}>{leaderboard[0].orders} pesanan &middot; {leaderboard[0].videos} video</div></div>
+{leaderboard.length>=3&&<div style={{background:"#fff",border:"1px solid #eef1f5",borderRadius:14,padding:16,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:"#c2410c"}}>3</div><div className="av" style={{background:AV[2],width:40,height:40,fontSize:16,margin:"8px auto"}}>{leaderboard[2].empName[0]}</div><div style={{fontWeight:700}}>{leaderboard[2].empName}</div><div style={{fontSize:12,color:"#64748b"}}>{leaderboard[2].account}</div><div style={{fontSize:18,fontWeight:700,color:"#16a34a",marginTop:4}}>{fm(Math.round(leaderboard[2].revenue))}</div><div style={{fontSize:11,color:"#94a3b8"}}>{leaderboard[2].orders} pesanan</div></div>}
+</div>}
+
+<div className="tw"><table><thead><tr><th>#</th><th>Karyawan</th><th>Akun TikTok</th><th>Revenue</th><th>Pesanan</th><th>Video</th><th>Biaya Ads</th><th>ROI</th></tr></thead><tbody>{leaderboard.map((a,i)=><tr key={a.account}><td style={{fontWeight:700,color:i===0?"#d97706":i===1?"#94a3b8":i===2?"#c2410c":"#64748b"}}>{i+1}</td><td><div className="er"><div className="av" style={{background:AV[i%9]}}>{a.empName[0]}</div><div><div style={{fontWeight:600}}>{a.empName}</div><div style={{fontSize:11,color:"#64748b"}}>{a.empP}</div></div></div></td><td style={{fontSize:12,color:"#64748b"}}>{a.account}</td><td style={{fontWeight:600,color:"#16a34a"}}>{fm(Math.round(a.revenue))}</td><td>{a.orders}</td><td>{a.videos}</td><td style={{fontSize:11}}>{fm(Math.round(a.cost))}</td><td><span style={bg(a.cost>0?"lembur":"approved")}>{a.cost>0?rj(a.revenue/a.cost)+"x":"Organic"}</span></td></tr>)}</tbody></table></div>
+</div>
+</>}
+
+<div className="cd">
+<div className="ch"><span className="ct">Mapping Akun TikTok → Karyawan</span></div>
+<p style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>Hanya akun yang di-mapping yang masuk leaderboard karyawan.</p>
+<div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+<input className="inp" placeholder="Nama akun TikTok" value={affMapEdit.acc} onChange={e=>sAffMapEdit(p=>({...p,acc:e.target.value}))} style={{width:200}}/>
+<select className="inp" value={affMapEdit.eid} onChange={e=>sAffMapEdit(p=>({...p,eid:e.target.value}))} style={{width:160}}><option value="">Pilih karyawan</option>{em.map(e=><option key={e.id} value={e.id}>{e.n}</option>)}</select>
+<button className="btn bs" onClick={()=>{if(affMapEdit.acc&&affMapEdit.eid){sAffMap(p=>({...p,[affMapEdit.acc]:affMapEdit.eid}));sAffMapEdit({acc:"",eid:""});}}}>Tambah</button>
+</div>
+<div className="tw"><table><thead><tr><th>Akun TikTok</th><th>Karyawan</th><th>Aksi</th></tr></thead><tbody>{Object.entries(affMap).map(([acc,eid])=>{const emp=em.find(e=>e.id===eid);return <tr key={acc}><td style={{fontWeight:600}}>{acc}</td><td><div className="er"><div className="av sm" style={{background:BR}}>{emp?.n?.[0]||"?"}</div>{emp?.n||"?"}</div></td><td><button className="btn bd bs" onClick={()=>sAffMap(p=>{const n={...p};delete n[acc];return n;})}><Trash2 size={12}/></button></td></tr>;})}</tbody></table></div>
+</div>
+
+{unmapped.length>0&&<div className="cd">
+<div className="ch"><span className="ct">Akun belum di-mapping ({unmapped.length})</span></div>
+<div style={{fontSize:12,color:"#94a3b8",marginBottom:8}}>Akun-akun ini tidak masuk leaderboard karyawan.</div>
+<div className="tw"><table><thead><tr><th>Akun TikTok</th><th>Revenue</th><th>Pesanan</th><th>Aksi</th></tr></thead><tbody>{unmapped.slice(0,10).map(a=><tr key={a.account}><td>{a.account}</td><td>{fm(Math.round(a.revenue))}</td><td>{a.orders}</td><td><button className="btn bo bs" onClick={()=>sAffMapEdit({acc:a.account,eid:""})}>Map</button></td></tr>)}</tbody></table></div>
+</div>}
+</div>;};
+
+const EAff=()=>{if(!le)return null;
+const myAccs=Object.entries(affMap).filter(([_,eid])=>eid===le.id).map(([acc])=>acc);
+const myData=affData.filter(a=>myAccs.includes(a.account));
+const totalRev=myData.reduce((s,a)=>s+a.revenue,0);
+const totalOrd=myData.reduce((s,a)=>s+a.orders,0);
+const totalVid=myData.reduce((s,a)=>s+a.videos,0);
+const allMapped=affData.filter(a=>affMap[a.account]).sort((a,b)=>b.revenue-a.revenue);
+const myRank=allMapped.findIndex(a=>myAccs.includes(a.account))+1;
+if(myAccs.length===0)return <div className="cd" style={{textAlign:"center",padding:32,color:"#94a3b8"}}>Belum ada akun TikTok yang tertaut ke profil Anda.</div>;
+return <div>
+<div className="cd">
+<div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:16}}>
+<div style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}><div style={{fontSize:11,color:"#94a3b8"}}>Ranking Anda</div><div style={{fontSize:28,fontWeight:700,color:myRank<=3?"#d97706":"#0f172a"}}>#{myRank||"-"}</div><div style={{fontSize:11,color:"#94a3b8"}}>dari {allMapped.length} affiliator</div></div>
+<div style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}><div style={{fontSize:11,color:"#94a3b8"}}>Revenue Anda</div><div style={{fontSize:22,fontWeight:700,color:"#16a34a"}}>{fm(Math.round(totalRev))}</div></div>
+<div style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}><div style={{fontSize:11,color:"#94a3b8"}}>Pesanan</div><div style={{fontSize:22,fontWeight:700,color:"#534AB7"}}>{totalOrd}</div></div>
+<div style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}><div style={{fontSize:11,color:"#94a3b8"}}>Video</div><div style={{fontSize:22,fontWeight:700,color:"#d97706"}}>{totalVid}</div></div>
+</div>
+{myData.map(a=><div key={a.account} style={{background:"#f8f9fb",borderRadius:12,padding:14,marginBottom:8}}><div style={{fontWeight:600,marginBottom:4}}>@{a.account}</div><div style={{display:"flex",gap:16,fontSize:12,color:"#64748b"}}><span>Revenue: <strong style={{color:"#16a34a"}}>{fm(Math.round(a.revenue))}</strong></span><span>Pesanan: <strong>{a.orders}</strong></span><span>Video: <strong>{a.videos}</strong></span></div></div>)}
+</div>
+<div className="cd"><div className="ct" style={{marginBottom:8}}>Leaderboard</div>
+<div className="tw"><table><thead><tr><th>#</th><th>Affiliator</th><th>Revenue</th><th>Pesanan</th></tr></thead><tbody>{allMapped.map((a,i)=>{const eid=affMap[a.account];const emp=em.find(e=>e.id===eid);const isMe=myAccs.includes(a.account);return <tr key={a.account} style={isMe?{background:"#fefce8"}:{}}><td style={{fontWeight:700,color:i===0?"#d97706":"#64748b"}}>{i+1}</td><td><div className="er"><div className="av sm" style={{background:isMe?BR:AV[i%9]}}>{emp?.n?.[0]||"?"}</div><span style={{fontWeight:isMe?700:400}}>{emp?.n||a.account}{isMe?" (Anda)":""}</span></div></td><td style={{fontWeight:600,color:"#16a34a"}}>{fm(Math.round(a.revenue))}</td><td>{a.orders}</td></tr>})}</tbody></table></div></div>
+</div>;};
+
 const renderView=()=>{switch(vw){
 case"dashboard":return ADash();
 case"attendance":return AAtt();
@@ -522,6 +619,8 @@ case"dispensasi":return ADisp();
 case"employees":return AEmp();
 case"accounts":return AAcc();
 case"upload":return <AUpWrap/>;
+case"affiliate":return AAff();
+case"emp-aff":return EAff();
 case"emp-dash":return EDash();
 case"emp-att":return EAtt();
 case"emp-pay":return EPay();
