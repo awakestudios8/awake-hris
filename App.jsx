@@ -131,11 +131,11 @@ const[sns,sSns]=useState(false);const[snp,sSnp]=useState("");const[sls,sSls]=use
 const[regF,sRegF]=useState({e:"",u:"",p:""});const[showReg,sShowReg]=useState(false);
 const[chpw,sChpw]=useState({o:"",n:"",c:""});
 const[affData,sAffData]=useState([]);
-const[affMap,sAffMap]=useState({"postervisualid":"1001","posterify":"300306"});
+const[affMap,sAffMap]=useState({});
 const[affMapEdit,sAffMapEdit]=useState({acc:"",eid:""});
 
 useEffect(()=>{(async()=>{try{
-const[emps,accs,lvs,sps,pss,otms,atts,disps]=await Promise.all([
+const[emps,accs,lvs,sps,pss,otms,atts,disps,affDs,affMs]=await Promise.all([
 sf("employees","?order=name"),
 sf("accounts"),
 sf("leaves","?order=created_at.desc"),
@@ -144,6 +144,8 @@ sf("payslips"),
 sf("overtime","?order=date.desc"),
 sf("daily_status"),
 sf("dispensations"),
+sf("affiliate_data"),
+sf("affiliate_map"),
 ]);
 if(emps?.length){const mapped=emps.map(e=>({id:e.id,n:e.name,d:e.department,p:e.position,pd:e.pay_date,s:e.salary}));sEm(mapped);const ap={};mapped.forEach(e=>{ap[e.id]={};});sAP(ap);}
 if(accs?.length)sAc(accs.map(a=>({id:a.id,u:a.username,p:a.password,r:a.role,e:a.employee_id})));
@@ -153,6 +155,8 @@ if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:String(o.date).slice(0,10),jam:Number(o.hours),ket:o.notes})));
 console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);let val=a.status||"Hadir";try{const parsed=JSON.parse(val);if(typeof parsed==="object")val=parsed;}catch(e){}ma[a.employee_id+"-"+dd]=val;});console.log("manAtt keys:",Object.keys(ma));sManAtt(ma);}
 if(disps?.length){const dd2={};disps.forEach(d2=>{if(d2.granted){const dk=d2.employee_id+"-"+String(d2.date).slice(0,10);dd2[dk]=true;}});sDp(dd2);}
+if(affDs?.length)sAffData(affDs.map(a=>({account:a.account,revenue:Number(a.revenue),orders:Number(a.orders),cost:Number(a.cost),videos:Number(a.videos)})));
+if(affMs?.length){const m={};affMs.forEach(a=>{m[a.account]=a.employee_id;});sAffMap(m);}
 /* Auto-login from session */
 try{const ss=sessionStorage.getItem("hris_session");if(ss){const s=JSON.parse(ss);const uname=s.u;let decoded;try{decoded=atob(uname);}catch(e){decoded=uname;}const a2=accs?.length?accs.find(x=>x.username===decoded||x.username===uname):null;if(a2){if(s.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");}else{const empD=emps?.length?emps.find(x=>x.id===s.eid||x.id===a2.employee_id):null;if(empD){sLe({id:empD.id,n:empD.name,d:empD.department,p:empD.position,pd:empD.pay_date,s:empD.salary});sRl("employee");sVw("emp-dash");sPg("app");}}}}}catch(e){}
 }catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
@@ -539,6 +543,10 @@ if(jenis==="Video")accs[akun].videos++;
 });
 const arr=Object.values(accs).sort((a,b)=>b.revenue-a.revenue);
 sAffData(arr);
+/* Save to Supabase */
+fetch(SUPA+"/rest/v1/affiliate_data",{method:"DELETE",headers:SH}).then(()=>{
+arr.forEach(a=>{fetch(SUPA+"/rest/v1/affiliate_data",{method:"POST",headers:SH,body:JSON.stringify({account:a.account,revenue:Math.round(a.revenue),orders:a.orders,cost:Math.round(a.cost),videos:a.videos})}).catch(e=>console.error("Aff save err:",e));});
+}).catch(e=>console.error("Aff delete err:",e));
 };
 
 return <div>
@@ -572,9 +580,9 @@ return <div>
 <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
 <input className="inp" placeholder="Nama akun TikTok" value={affMapEdit.acc} onChange={e=>sAffMapEdit(p=>({...p,acc:e.target.value}))} style={{width:200}}/>
 <select className="inp" value={affMapEdit.eid} onChange={e=>sAffMapEdit(p=>({...p,eid:e.target.value}))} style={{width:160}}><option value="">Pilih karyawan</option>{em.map(e=><option key={e.id} value={e.id}>{e.n}</option>)}</select>
-<button className="btn bs" onClick={()=>{if(affMapEdit.acc&&affMapEdit.eid){sAffMap(p=>({...p,[affMapEdit.acc]:affMapEdit.eid}));sAffMapEdit({acc:"",eid:""});}}}>Tambah</button>
+<button className="btn bs" onClick={()=>{if(affMapEdit.acc&&affMapEdit.eid){sAffMap(p=>({...p,[affMapEdit.acc]:affMapEdit.eid}));fetch(SUPA+"/rest/v1/affiliate_map?on_conflict=account",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({account:affMapEdit.acc,employee_id:affMapEdit.eid})}).catch(e=>console.error("Map save err:",e));sAffMapEdit({acc:"",eid:""});}}}>Tambah</button>
 </div>
-<div className="tw"><table><thead><tr><th>Akun TikTok</th><th>Karyawan</th><th>Aksi</th></tr></thead><tbody>{Object.entries(affMap).map(([acc,eid])=>{const emp=em.find(e=>e.id===eid);return <tr key={acc}><td style={{fontWeight:600}}>{acc}</td><td><div className="er"><div className="av sm" style={{background:BR}}>{emp?.n?.[0]||"?"}</div>{emp?.n||"?"}</div></td><td><button className="btn bd bs" onClick={()=>sAffMap(p=>{const n={...p};delete n[acc];return n;})}><Trash2 size={12}/></button></td></tr>;})}</tbody></table></div>
+<div className="tw"><table><thead><tr><th>Akun TikTok</th><th>Karyawan</th><th>Aksi</th></tr></thead><tbody>{Object.entries(affMap).map(([acc,eid])=>{const emp=em.find(e=>e.id===eid);return <tr key={acc}><td style={{fontWeight:600}}>{acc}</td><td><div className="er"><div className="av sm" style={{background:BR}}>{emp?.n?.[0]||"?"}</div>{emp?.n||"?"}</div></td><td><button className="btn bd bs" onClick={()=>{sAffMap(p=>{const n={...p};delete n[acc];return n;});fetch(SUPA+"/rest/v1/affiliate_map?account=eq."+encodeURIComponent(acc),{method:"DELETE",headers:SH}).catch(e=>console.error("Map del err:",e));}}><Trash2 size={12}/></button></td></tr>;})}</tbody></table></div>
 </div>
 
 {unmapped.length>0&&<div className="cd">
