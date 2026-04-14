@@ -168,7 +168,10 @@ const getOT=()=>{if(!dateStr)return 0;const ot=lbr.find(o=>o.ei===ei&&o.tgl===da
 if(checkDt&&checkDt>today)return none;
 /* 2. Manual attendance override */
 const dateKey=dateStr?ei+'-'+dateStr:null;
-if(dateKey&&manAtt[dateKey]){const raw=manAtt[dateKey];const ms=typeof raw==="object"?raw:{st:raw};const st2=String(ms.st||ms||"Hadir");return{...none,st:st2,ci:ms.ci||null,co:ms.co||null,oi:ms.oi||null,oo:ms.oo||null,oh:getOT(),wt:!!ms.wt};}
+if(dateKey&&manAtt[dateKey]){const raw=manAtt[dateKey];const ms=typeof raw==="object"?raw:{st:raw};let st2=String(ms.st||ms||"Hadir");const mci=ms.ci||null;
+/* Auto-detect terlambat from clock-in time */
+if(st2==="Hadir"&&mci&&checkDt){const w2=checkDt.getDay();const hol2=isHoliday(checkDt);if(w2!==0&&!hol2&&!ms.wt){const[hh,mm]=mci.split(":").map(Number);if(hh*60+mm>480+TOL)st2="Terlambat";}}
+return{...none,st:st2,ci:mci,co:ms.co||null,oi:ms.oi||null,oo:ms.oo||null,oh:getOT(),wt:!!ms.wt,la:st2==="Terlambat",lm:mci?Math.max(0,parseInt(mci.split(":")[0])*60+parseInt(mci.split(":")[1])-480):0};}
 /* 3. Approved leaves */
 if(dateStr){const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&dateStr>=l.s&&dateStr<=l.e);if(leave)return{...none,st:leave.t,oh:getOT()};}
 /* 4. Punch data */
@@ -269,8 +272,8 @@ return <div style={{maxWidth:520,margin:"0 auto"}}>
 <div style={{textAlign:"center",marginBottom:14,fontSize:12,color:"#94a3b8"}}>Periode gaji: <strong style={{color:"#0f172a"}}>{prd}</strong></div>
 
 {/* 3 key stats */}
-<div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:16}}>
-{[{l:"Kehadiran",sub:"termasuk terlambat",v:rc.h,c:"#16a34a",Ic:UserCheck},{l:"Sakit/Izin",sub:"periode ini",v:rc.sk+rc.iz,c:"#7c3aed",Ic:Clock},{l:"Total Lembur",sub:"kerja + libur",v:fj(rj(rc.ol+rc.ow)),c:"#d97706",Ic:TrendingUp},{l:"Sisa Cuti",sub:"dari "+CQ+" hari",v:cu<=3?cu+"/"+CQ:cu+"/"+CQ,c:cu<=3?"#ef4444":"#2563eb",Ic:Coffee}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+{[{l:"Kehadiran",sub:"hadir + terlambat",v:rc.h,c:"#16a34a",Ic:UserCheck},{l:"Terlambat",sub:"periode ini",v:rc.t,c:"#ca8a04",Ic:Clock},{l:"Sakit/Izin",sub:"periode ini",v:rc.sk+rc.iz,c:"#7c3aed",Ic:AlertTriangle},{l:"Alpha",sub:"tanpa keterangan",v:rc.a,c:"#ef4444",Ic:X},{l:"Total Lembur",sub:"kerja + libur",v:fj(rj(rc.ol+rc.ow)),c:"#d97706",Ic:TrendingUp},{l:"Sisa Cuti",sub:"dari "+CQ+" hari",v:cu<=3?cu+"/"+CQ:cu+"/"+CQ,c:cu<=3?"#ef4444":"#2563eb",Ic:Coffee}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:14,padding:14,border:"1px solid #eef1f5",textAlign:"center"}}>
 <div style={{width:36,height:36,borderRadius:10,background:x.c+"12",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}><x.Ic size={18} color={x.c}/></div>
 <div style={{fontSize:24,fontWeight:700,color:x.c}}>{x.v}</div>
 <div style={{fontSize:11,color:"#94a3b8"}}>{x.l}</div>
