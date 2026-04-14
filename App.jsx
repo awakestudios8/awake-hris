@@ -367,14 +367,77 @@ const AAcc=()=><div className="cd"><div className="ch"><span className="ct">Akun
 {showReg&&<RegForm em={em} ac={ac} onError={sAe} onSubmit={(f)=>{si("accounts",{username:f.u,password:f.p,role:"employee",employee_id:f.e}).then(r=>{if(r?.[0])sAc(p=>[...p,{id:r[0].id,u:f.u,p:f.p,r:"employee",e:f.e}]);});sAe("");sShowReg(false);}} onCancel={()=>sShowReg(false)}/>}
 <div className="tw"><table><thead><tr><th>Nama</th><th>Username</th><th>Status</th></tr></thead><tbody>{em.map(e=>{const a=ac.find(x=>x.e===e.id);return <tr key={e.id}><td style={{fontWeight:600}}>{e.n}</td><td>{a?a.u:<span style={{color:"#94a3b8"}}>-</span>}</td><td>{a?<span style={bg("approved")}>Aktif</span>:<span style={bg("alpha")}>Belum</span>}</td></tr>;})}</tbody></table></div></div>;
 
-const AUp=()=><div className="cd"><div className="ch"><span className="ct">Upload Deli 3765</span></div><div className="ua" onClick={()=>{sUps("r");setTimeout(()=>sUps("p"),1200);setTimeout(()=>sUps("d"),2800);}}><Upload size={32} color={BR} style={{marginBottom:8}}/><div style={{fontWeight:700,fontSize:15}}>Upload File</div><div style={{fontSize:13,color:"#94a3b8",marginTop:4}}>.dat .xls .csv</div></div>{ups&&<div style={{marginTop:12,padding:12,borderRadius:10,fontWeight:600,fontSize:13,background:ups==="d"?"#f0fdf4":"#fefce8",color:ups==="d"?"#16a34a":"#ca8a04"}}>{ups==="r"?"Membaca...":ups==="p"?"Memproses...":"Berhasil!"}</div>}
+const AUp=()=>{
+const[upRes,sUpRes]=useState(null);const[upLog,sUpLog]=useState([]);
+const parseXls=async(file)=>{
+sUps("r");sUpRes(null);sUpLog([]);
+const XLSX=await import("https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs");
+const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array"});
+const ws=wb.Sheets[wb.SheetNames[0]];const range=XLSX.utils.decode_range(ws["!ref"]);
+const logs=[];let saved=0,skipped=0;
+/* Parse employees: every 3 rows */
+for(let r=range.s.r;r<=range.e.r;r++){
+const uidCell=ws[XLSX.utils.encode_cell({r,c:4})];
+if(uidCell&&String(uidCell.v)==="User ID:"){
+const idCell=ws[XLSX.utils.encode_cell({r,c:5})];
+const nameCell=ws[XLSX.utils.encode_cell({r,c:11})];
+if(!idCell)continue;
+const eid=String(idCell.v).trim();const ename=nameCell?String(nameCell.v).trim():"";
+/* Date header row = r+1, punch row = r+2 */
+const dateRow=r+1;const punchRow=r+2;
+for(let c=1;c<=31;c++){
+const dc=ws[XLSX.utils.encode_cell({r:dateRow,c})];
+if(!dc)continue;
+const day=Math.round(Number(dc.v));if(!day||day<1||day>31)continue;
+const pc=ws[XLSX.utils.encode_cell({r:punchRow,c})];
+const punchStr=pc?String(pc.v).trim():"";
+const now=new Date();const yr=now.getFullYear();const mo=now.getMonth();
+const dateStr=yr+"-"+String(mo+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+const dt=new Date(yr,mo,day);
+const isHol=isHoliday(dt)||dt.getDay()===0;
+if(!punchStr){
+/* No punch - check if manual data exists, keep it */
+const existingKey=eid+"-"+dateStr;
+if(manAtt[existingKey]){skipped++;continue;}
+/* Check leaves */
+const hasLeave=lv.find(l=>l.ei===eid&&l.st==="Approved"&&dateStr>=l.s&&dateStr<=l.e);
+if(hasLeave){skipped++;logs.push(ename+" "+day+": "+hasLeave.t+" (dari database)");continue;}
+if(dt<=now&&!isHol){logs.push(ename+" "+day+": Kosong (tidak diubah)");}
+skipped++;continue;
+}
+/* Parse punches */
+const punches=punchStr.split("\n").map(s=>s.trim()).filter(s=>/^\d{2}:\d{2}$/.test(s));
+if(punches.length===0){skipped++;continue;}
+let status="Hadir";
+if(isHol&&punches.length>=2){status="Lembur Hari Libur";}
+/* Save to daily_status - only if no manual override exists */
+const existingKey2=eid+"-"+dateStr;
+if(manAtt[existingKey2]){
+logs.push(ename+" "+day+": Manual override ada, skip");skipped++;continue;
+}
+/* Save punch data */
+const ci=punches[0]||null;const co=punches[1]||null;
+sManAtt(p=>({...p,[existingKey2]:status}));
+try{await fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:eid,date:dateStr,status:status})});saved++;logs.push(ename+" "+day+": "+status+" ("+punches.join(", ")+")");}catch(e){logs.push(ename+" "+day+": GAGAL simpan");}
+}}}
+sUpRes({saved,skipped});sUps("d");sUpLog(logs);
+};
+return <div className="cd"><div className="ch"><span className="ct">Upload Deli 3765</span></div>
+<div className="ua"><label style={{cursor:"pointer",display:"block"}}><input type="file" accept=".xls,.xlsx,.csv" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(f)parseXls(f);e.target.value="";}}/><Upload size={32} color={BR} style={{marginBottom:8}}/><div style={{fontWeight:700,fontSize:15}}>Upload File</div><div style={{fontSize:13,color:"#94a3b8",marginTop:4}}>.xls .xlsx</div></label></div>
+{ups==="r"&&<div style={{marginTop:12,padding:12,borderRadius:10,fontWeight:600,fontSize:13,background:"#fefce8",color:"#ca8a04"}}>Membaca file...</div>}
+{ups==="d"&&upRes&&<div style={{marginTop:12,padding:16,borderRadius:12,background:"#f0fdf4",border:"1px solid #bbf7d0"}}>
+<div style={{fontSize:14,fontWeight:700,color:"#16a34a",marginBottom:8}}>Upload Berhasil</div>
+<div style={{fontSize:13,marginBottom:4}}>Tersimpan: <strong>{upRes.saved}</strong> | Dilewati: <strong>{upRes.skipped}</strong></div>
+</div>}
+{upLog.length>0&&<div style={{marginTop:12,maxHeight:300,overflow:"auto",padding:12,background:"#f8f9fb",borderRadius:10,fontSize:11,fontFamily:"monospace",lineHeight:1.8}}>{upLog.map((l,i)=><div key={i} style={{color:l.includes("GAGAL")?"#dc2626":l.includes("skip")?"#94a3b8":"#0f172a"}}>{l}</div>)}</div>}
 <div style={{marginTop:16,padding:16,background:"#f8f9fb",borderRadius:12,fontSize:12,color:"#64748b",lineHeight:2}}>
-<div style={{fontWeight:700,color:"#0f172a",marginBottom:4}}>Flow Absensi di Mesin Deli 3765</div>
-<strong>Hari kerja (2x absen):</strong> Masuk 08:00 &#8594; Pulang (jam berapapun). Lembur diinput manual oleh admin<br/>
-<strong>Hari libur / tanggal merah:</strong> Jika ada absen, semua dihitung lembur<br/>
-<strong>Potongan istirahat lembur otomatis:</strong> Lembur &gt;2 jam dipotong 30 menit, &gt;4 jam dipotong 60 menit<br/>
-<strong>Time Card:</strong> Log absen harian (Before Noon In/Out, After Noon In/Out, Overtime In/Out)
-</div></div>;
+<div style={{fontWeight:700,color:"#0f172a",marginBottom:4}}>Cara Kerja Upload</div>
+<strong>Hari kerja (2 absen):</strong> Jam 1 = Masuk, Jam 2 = Pulang<br/>
+<strong>Hari kerja (4 absen):</strong> Masuk, Pulang, Lembur Masuk, Lembur Pulang<br/>
+<strong>Hari libur (2 absen):</strong> Lembur Masuk, Lembur Pulang<br/>
+<strong>Kosong:</strong> Cek database (cuti/sakit/izin), jika tidak ada = tidak diubah<br/>
+<strong>Data manual yang sudah diinput sebelumnya TIDAK akan ditimpa</strong>
+</div></div>;};
 
 const EAtt=()=>{if(!le)return null;const pr=getPR(le.pd);const days=[];for(let dt=new Date(pr.ed);dt>=pr.sd;dt.setDate(dt.getDate()-1)){days.push(new Date(dt));}const today2=new Date();today2.setHours(0,0,0,0);
 return <div className="cd"><div className="ch"><span className="ct">Kehadiran</span></div><div style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>Periode: <strong style={{color:"#0f172a"}}>{pLbl(le.pd)}</strong></div><div className="tw"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th></tr></thead><tbody>{days.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today2)return null;const a=gA(le.id,d,new Date(dt));const we=w===0;const hol=isHoliday(new Date(dt));if((we||hol)&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.3}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={4} style={{color:"#cbd5e1"}}>{hol||"Libur"}</td></tr>;if(a.st==="-")return null;return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td><span style={bg(a.st.toLowerCase())}>{a.st}</span></td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}{a.obk>0?" (-"+a.obk+"m istirahat)":""}</span>:"-"}</td></tr>;}).filter(Boolean)}</tbody></table></div></div>;};
