@@ -147,7 +147,7 @@ if(lvs?.length)sLv(lvs.map(l=>({id:l.id,ei:l.employee_id,en:l.employee_name,t:l.
 if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s.level,r:s.reason,dt:s.issued_date,ex:s.expiry_date})));
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:String(o.date).slice(0,10),jam:Number(o.hours),ket:o.notes})));
-console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);ma[a.employee_id+"-"+dd]=a.status||"Hadir";});console.log("manAtt keys:",Object.keys(ma));sManAtt(ma);}
+console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);let val=a.status||"Hadir";try{const parsed=JSON.parse(val);if(typeof parsed==="object")val=parsed;}catch(e){}ma[a.employee_id+"-"+dd]=val;});console.log("manAtt keys:",Object.keys(ma));sManAtt(ma);}
 /* Auto-login from session */
 try{const ss=sessionStorage.getItem("hris_session");if(ss){const s=JSON.parse(ss);const a2=accs?.length?accs.find(x=>x.username===s.u):null;if(a2){if(s.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");}else{const empD=emps?.length?emps.find(x=>x.id===s.eid||x.id===a2.employee_id):null;if(empD){sLe({id:empD.id,n:empD.name,d:empD.department,p:empD.position,pd:empD.pay_date,s:empD.salary});sRl("employee");sVw("emp-dash");sPg("app");}}}}}catch(e){}
 }catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
@@ -167,7 +167,7 @@ const getOT=()=>{if(!dateStr)return 0;const ot=lbr.find(o=>o.ei===ei&&o.tgl===da
 if(checkDt&&checkDt>today)return none;
 /* 2. Manual attendance override */
 const dateKey=dateStr?ei+'-'+dateStr:null;
-if(dateKey&&manAtt[dateKey]){const ms=manAtt[dateKey];return{...none,st:ms,ci:ms==="Hadir"?"08:00":null,co:ms==="Hadir"?"17:00":null,oh:getOT()};}
+if(dateKey&&manAtt[dateKey]){const raw=manAtt[dateKey];const ms=typeof raw==="object"?raw:{st:raw};return{...none,st:ms.st||raw,ci:ms.ci||null,co:ms.co||null,oi:ms.oi||null,oo:ms.oo||null,oh:getOT(),wt:!!ms.wt};}
 /* 3. Approved leaves */
 if(dateStr){const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&dateStr>=l.s&&dateStr<=l.e);if(leave)return{...none,st:leave.t,oh:getOT()};}
 /* 4. Punch data */
@@ -198,7 +198,8 @@ if(at.oh>0&&!hol&&w!==0)ol=rj(ol+at.oh);
 const[savMsg,sSavMsg]=useState("");
 const setAtt=(ei,dateStr,status)=>{const k=ei+"-"+dateStr;sManAtt(p=>({...p,[k]:status}));
 sSavMsg("Menyimpan...");
-fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,status:status})}).then(async r=>{if(!r.ok){const t=await r.text();sSavMsg("GAGAL: "+r.status+" - "+t);console.error("Save FAILED:",r.status,t);}else{sSavMsg("Tersimpan ✓");setTimeout(()=>sSavMsg(""),2000);}}).catch(e=>{sSavMsg("Error koneksi");console.error("Save error:",e);});};
+const saveVal=typeof status==="object"?JSON.stringify(status):status;
+fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,status:saveVal})}).then(async r=>{if(!r.ok){const t=await r.text();sSavMsg("GAGAL: "+r.status+" - "+t);console.error("Save FAILED:",r.status,t);}else{sSavMsg("Tersimpan ✓");setTimeout(()=>sSavMsg(""),2000);}}).catch(e=>{sSavMsg("Error koneksi");console.error("Save error:",e);});};
 
 const svSl=(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));fetch(SUPA+"/rest/v1/payslips",{method:"POST",headers:{...SH,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})});};
 const eSP=ei=>Object.keys(sl[ei]||{}).sort().reverse();
@@ -298,7 +299,7 @@ return <div className="cd"><div className="ch"><span className="ct">Rekap Period
 {emp&&rc&&<><div style={{background:BL,borderRadius:14,padding:16,marginBottom:16,border:"1px solid rgba(175,25,23,.08)"}}><div className="er" style={{marginBottom:8}}><div className="av" style={{background:BR,width:40,height:40,fontSize:16}}>{emp.n[0]}</div><div><div style={{fontWeight:700,fontSize:16}}>{emp.n}</div><div style={{fontSize:12,color:"#64748b"}}>{emp.p} — Gaji tgl {emp.pd}</div><div style={{fontSize:12,color:BR,fontWeight:600,marginTop:2}}>Periode: {prd}</div></div></div>
 {savMsg&&<div style={{padding:"8px 14px",borderRadius:10,fontSize:12,fontWeight:600,marginBottom:10,background:savMsg.includes("GAGAL")?"#fef2f2":savMsg.includes("✓")?"#f0fdf4":"#fefce8",color:savMsg.includes("GAGAL")?"#dc2626":savMsg.includes("✓")?"#16a34a":"#ca8a04"}}>{savMsg}</div>}<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8}}>{[{l:"Kehadiran",v:rc.h,c:"#16a34a"},{l:"Sakit",v:rc.sk,c:"#dc2626"},{l:"Izin",v:rc.iz,c:"#7c3aed"},{l:"Alpha",v:rc.a,c:"#ef4444"},{l:"Lembur",v:fj(rj(rc.ol+rc.ow)),c:"#d97706"},{l:"Sisa Cuti",v:(CQ-cU(emp.id))+"/"+CQ,c:"#2563eb"}].map((x,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:10,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:x.c}}>{x.v}</div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{x.l}</div></div>)}</div></div>
 <div className="tw"><table><thead><tr><th>Tgl</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th><th>Edit</th></tr></thead><tbody>{(()=>{const pr2=getPR(emp.pd);const ds=[];for(let dt=new Date(pr2.sd);dt<=pr2.ed;dt.setDate(dt.getDate()+1)){ds.push(new Date(dt));}return ds.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const a=gA(emp.id,d,new Date(dt));const we=w===0;const hol=isHoliday(new Date(dt));if((we||hol)&&a.oh===0&&a.st==="-"){const ds2h=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const isFutH=new Date(dt)>new Date(new Date().setHours(0,0,0,0));return <tr key={dt.toISOString()} style={{opacity:.4}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={3} style={{color:"#cbd5e1",fontSize:12}}>{hol||"Libur"}</td><td>-</td>{!isFutH&&<td><select className="inp" value={manAtt[emp.id+"-"+ds2h]||""} onChange={e=>{const v=e.target.value;if(v)setAtt(emp.id,ds2h,v);else{sManAtt(p=>{const n={...p};delete n[emp.id+"-"+ds2h];return n;});fetch(SUPA+"/rest/v1/daily_status?employee_id=eq."+emp.id+"&date=eq."+ds2h,{method:"DELETE",headers:SH}).catch(()=>{});}}} style={{width:90,padding:"4px 6px",fontSize:11}}><option value="">Auto</option><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Cuti">Cuti</option><option value="Alpha">Alpha</option></select></td>}</tr>;}const ds2=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const isFut=new Date(dt)>new Date(new Date().setHours(0,0,0,0));
-return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td>{isFut?<span style={{color:"#cbd5e1"}}>—</span>:<span style={bg(a.st==="Hadir"||a.st==="Terlambat"?"hadir":a.st.toLowerCase())}>{a.st}</span>}</td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}</span>:"-"}</td>{!isFut&&<td><select className="inp" value={manAtt[emp.id+"-"+ds2]||""} onChange={e=>{const v=e.target.value;if(v)setAtt(emp.id,ds2,v);else{sManAtt(p=>{const n={...p};delete n[emp.id+"-"+ds2];return n;});fetch(SUPA+"/rest/v1/daily_status?employee_id=eq."+emp.id+"&date=eq."+ds2,{method:"DELETE",headers:SH}).catch(()=>{});}}} style={{width:90,padding:"4px 6px",fontSize:11}}><option value="">Auto</option><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Cuti">Cuti</option><option value="Alpha">Alpha</option></select></td>}</tr>;});})()}</tbody></table></div></>}</div>;};
+return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td>{isFut?<span style={{color:"#cbd5e1"}}>—</span>:<span style={bg(a.st==="Hadir"||a.st==="Terlambat"?"hadir":a.st.toLowerCase())}>{a.st}</span>}</td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}</span>:"-"}</td>{!isFut&&<td><select className="inp" value={(()=>{const v=manAtt[emp.id+"-"+ds2];if(!v)return "";return typeof v==="object"?v.st:v;})()} onChange={e=>{const v=e.target.value;if(v){const old=manAtt[emp.id+"-"+ds2];const newVal=typeof old==="object"?{...old,st:v,src:"manual"}:{st:v,src:"manual"};setAtt(emp.id,ds2,newVal);}else{sManAtt(p=>{const n={...p};delete n[emp.id+"-"+ds2];return n;});fetch(SUPA+"/rest/v1/daily_status?employee_id=eq."+emp.id+"&date=eq."+ds2,{method:"DELETE",headers:SH}).catch(()=>{});}}} style={{width:90,padding:"4px 6px",fontSize:11}}><option value="">Auto</option><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Cuti">Cuti</option><option value="Alpha">Alpha</option></select></td>}</tr>;});})()}</tbody></table></div></>}</div>;};
 
 const APay=()=>{const sel=sls||em[0]?.id;const pds=eSP(sel);
 return <><div className="cd"><div className="ch"><span className="ct">Slip Gaji</span><select className="inp" style={{fontWeight:600,width:"auto",maxWidth:200}} value={sel} onChange={e=>sSls(e.target.value)}>{em.map(e=><option key={e.id} value={e.id}>{e.n}</option>)}</select></div>
@@ -367,11 +368,13 @@ const AAcc=()=><div className="cd"><div className="ch"><span className="ct">Akun
 {showReg&&<RegForm em={em} ac={ac} onError={sAe} onSubmit={(f)=>{si("accounts",{username:f.u,password:f.p,role:"employee",employee_id:f.e}).then(r=>{if(r?.[0])sAc(p=>[...p,{id:r[0].id,u:f.u,p:f.p,r:"employee",e:f.e}]);});sAe("");sShowReg(false);}} onCancel={()=>sShowReg(false)}/>}
 <div className="tw"><table><thead><tr><th>Nama</th><th>Username</th><th>Status</th></tr></thead><tbody>{em.map(e=>{const a=ac.find(x=>x.e===e.id);return <tr key={e.id}><td style={{fontWeight:600}}>{e.n}</td><td>{a?a.u:<span style={{color:"#94a3b8"}}>-</span>}</td><td>{a?<span style={bg("approved")}>Aktif</span>:<span style={bg("alpha")}>Belum</span>}</td></tr>;})}</tbody></table></div></div>;
 
-const AUp=()=>{
+const AUpWrap=()=>{
 const[upRes,sUpRes]=useState(null);const[upLog,sUpLog]=useState([]);
 const parseXls=async(file)=>{
 sUps("r");sUpRes(null);sUpLog([]);
-const XLSX=await import("https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs");
+/* Clear previous upload entries from manAtt (keep manual ones) */
+sManAtt(prev=>{const keep={};Object.entries(prev).forEach(([k,v])=>{if(typeof v==="object"&&v.src==="manual")keep[k]=v;else if(typeof v==="string")keep[k]=v;});return keep;});
+const XLSX=window.XLSX;if(!XLSX){sUps("err");return;}
 const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array"});
 const ws=wb.Sheets[wb.SheetNames[0]];const range=XLSX.utils.decode_range(ws["!ref"]);
 const logs=[];let saved=0,skipped=0;
@@ -382,7 +385,7 @@ if(uidCell&&String(uidCell.v)==="User ID:"){
 const idCell=ws[XLSX.utils.encode_cell({r,c:5})];
 const nameCell=ws[XLSX.utils.encode_cell({r,c:11})];
 if(!idCell)continue;
-const eid=String(idCell.v).trim();const ename=nameCell?String(nameCell.v).trim():"";
+let eid=String(idCell.v).trim();if(eid.includes('.'))eid=String(parseInt(eid));const ename=nameCell?String(nameCell.v).trim():"";
 /* Date header row = r+1, punch row = r+2 */
 const dateRow=r+1;const punchRow=r+2;
 for(let c=1;c<=31;c++){
@@ -408,17 +411,21 @@ skipped++;continue;
 /* Parse punches */
 const punches=punchStr.split("\n").map(s=>s.trim()).filter(s=>/^\d{2}:\d{2}$/.test(s));
 if(punches.length===0){skipped++;continue;}
-let status="Hadir";
-if(isHol&&punches.length>=2){status="Lembur Hari Libur";}
+const ci=punches[0]||null;const co=punches[1]||null;
+const oi=punches[2]||null;const oo=punches[3]||null;
+let status="Hadir";let wt=false;
+if(isHol&&punches.length>=2){status="Lembur Hari Libur";wt=true;}
 /* Save to daily_status - only if no manual override exists */
 const existingKey2=eid+"-"+dateStr;
-if(manAtt[existingKey2]){
-logs.push(ename+" "+day+": Manual override ada, skip");skipped++;continue;
+const existing=manAtt[existingKey2];
+if(existing&&typeof existing==="object"&&existing.src==="manual"){
+logs.push(ename+" "+day+": Data manual, skip");skipped++;continue;
 }
-/* Save punch data */
-const ci=punches[0]||null;const co=punches[1]||null;
-sManAtt(p=>({...p,[existingKey2]:status}));
-try{await fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:eid,date:dateStr,status:status})});saved++;logs.push(ename+" "+day+": "+status+" ("+punches.join(", ")+")");}catch(e){logs.push(ename+" "+day+": GAGAL simpan");}
+/* Save punch data as JSON */
+const punchData={st:status,ci:wt?null:ci,co:wt?null:co,oi:wt?ci:oi,oo:wt?co:oo,wt,src:"upload"};
+sManAtt(p=>({...p,[existingKey2]:punchData}));
+const saveStr=JSON.stringify(punchData);
+try{await fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:eid,date:dateStr,status:saveStr})});saved++;logs.push(ename+" "+day+": "+status+" ("+punches.join(", ")+")");}catch(e){logs.push(ename+" "+day+": GAGAL simpan");}
 }}}
 sUpRes({saved,skipped});sUps("d");sUpLog(logs);
 };
@@ -467,7 +474,7 @@ case"lembur":return ALbr();
 case"dispensasi":return ADisp();
 case"employees":return AEmp();
 case"accounts":return AAcc();
-case"upload":return AUp();
+case"upload":return <AUpWrap/>;
 case"emp-dash":return EDash();
 case"emp-att":return EAtt();
 case"emp-pay":return EPay();
