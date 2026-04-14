@@ -132,7 +132,7 @@ const[regF,sRegF]=useState({e:"",u:"",p:""});const[showReg,sShowReg]=useState(fa
 const[chpw,sChpw]=useState({o:"",n:"",c:""});
 
 useEffect(()=>{(async()=>{try{
-const[emps,accs,lvs,sps,pss,otms,atts]=await Promise.all([
+const[emps,accs,lvs,sps,pss,otms,atts,disps]=await Promise.all([
 sf("employees","?order=name"),
 sf("accounts"),
 sf("leaves","?order=created_at.desc"),
@@ -140,6 +140,7 @@ sf("warnings","?order=issued_date.desc"),
 sf("payslips"),
 sf("overtime","?order=date.desc"),
 sf("daily_status"),
+sf("dispensations"),
 ]);
 if(emps?.length){const mapped=emps.map(e=>({id:e.id,n:e.name,d:e.department,p:e.position,pd:e.pay_date,s:e.salary}));sEm(mapped);const ap={};mapped.forEach(e=>{ap[e.id]={};});sAP(ap);}
 if(accs?.length)sAc(accs.map(a=>({id:a.id,u:a.username,p:a.password,r:a.role,e:a.employee_id})));
@@ -148,6 +149,7 @@ if(sps?.length)sSp(sps.map(s=>({id:s.id,ei:s.employee_id,en:s.employee_name,lv:s
 if(pss?.length){const sm={};pss.forEach(p=>{if(!sm[p.employee_id])sm[p.employee_id]={};sm[p.employee_id][p.period]={it:p.items,nt:p.notes};});sSl(sm);}
 if(otms?.length)sLbr(otms.map(o=>({id:o.id,ei:o.employee_id,en:o.employee_name,tgl:String(o.date).slice(0,10),jam:Number(o.hours),ket:o.notes})));
 console.log("daily_status loaded:",atts?.length||0,"rows",atts);if(atts?.length){const ma={};atts.forEach(a=>{const dd=String(a.date).slice(0,10);let val=a.status||"Hadir";try{const parsed=JSON.parse(val);if(typeof parsed==="object")val=parsed;}catch(e){}ma[a.employee_id+"-"+dd]=val;});console.log("manAtt keys:",Object.keys(ma));sManAtt(ma);}
+if(disps?.length){const dd2={};disps.forEach(d2=>{if(d2.granted){const dk=d2.employee_id+"-"+String(d2.date).slice(0,10);dd2[dk]=true;}});sDp(dd2);}
 /* Auto-login from session */
 try{const ss=sessionStorage.getItem("hris_session");if(ss){const s=JSON.parse(ss);const uname=s.u;let decoded;try{decoded=atob(uname);}catch(e){decoded=uname;}const a2=accs?.length?accs.find(x=>x.username===decoded||x.username===uname):null;if(a2){if(s.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");}else{const empD=emps?.length?emps.find(x=>x.id===s.eid||x.id===a2.employee_id):null;if(empD){sLe({id:empD.id,n:empD.name,d:empD.department,p:empD.position,pd:empD.pay_date,s:empD.salary});sRl("employee");sVw("emp-dash");sPg("app");}}}}}catch(e){}
 }catch(err){console.error("Load error:",err);}sLd(false);})();},[]);
@@ -170,8 +172,11 @@ if(checkDt&&checkDt>today)return none;
 const dateKey=dateStr?ei+'-'+dateStr:null;
 if(dateKey&&manAtt[dateKey]){const raw=manAtt[dateKey];const ms=typeof raw==="object"?raw:{st:raw};let st2=String(ms.st||ms||"Hadir");const mci=ms.ci||null;
 /* Auto-detect terlambat from clock-in time */
-if(st2==="Hadir"&&mci&&checkDt){const w2=checkDt.getDay();const hol2=isHoliday(checkDt);if(w2!==0&&!hol2&&!ms.wt){const[hh,mm]=mci.split(":").map(Number);if(hh*60+mm>480+TOL)st2="Terlambat";}}
-return{...none,st:st2,ci:mci,co:ms.co||null,oi:ms.oi||null,oo:ms.oo||null,oh:getOT(),wt:!!ms.wt,la:st2==="Terlambat",lm:mci?Math.max(0,parseInt(mci.split(":")[0])*60+parseInt(mci.split(":")[1])-480):0};}
+let isLate=false;let lateMin=0;
+if(st2==="Hadir"&&mci&&checkDt){const w2=checkDt.getDay();const hol2=isHoliday(checkDt);if(w2!==0&&!hol2&&!ms.wt){const[hh,mm]=mci.split(":").map(Number);lateMin=Math.max(0,hh*60+mm-480);if(lateMin>TOL){isLate=true;st2="Terlambat";}}}
+/* Check dispensasi - if granted, override back to Hadir */
+if(isLate&&dateKey&&dp[dateKey]){st2="Hadir";isLate=false;}
+return{...none,st:st2,ci:mci,co:ms.co||null,oi:ms.oi||null,oo:ms.oo||null,oh:getOT(),wt:!!ms.wt,la:isLate,lm:lateMin};}
 /* 3. Approved leaves */
 if(dateStr){const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&dateStr>=l.s&&dateStr<=l.e);if(leave)return{...none,st:leave.t,oh:getOT()};}
 /* 4. Punch data */
@@ -181,7 +186,11 @@ if(checkDt){const w=checkDt.getDay();const hol=isHoliday(checkDt);if(w===0||hol)
 /* 6. Regular day overtime */
 const otH2=getOT();if(otH2>0&&r.oh===0)r.oh=otH2;
 return r;};
-const tD=(ei,d)=>{const k=ei+"-"+d;sDp(p=>({...p,[k]:!p[k]}));};
+const tD=(ei,dateStr2)=>{const k=ei+"-"+dateStr2;sDp(p=>{const n={...p,[k]:!p[k]};
+/* Save to Supabase dispensations table */
+if(n[k])fetch(SUPA+"/rest/v1/dispensations?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr2,granted:true})}).catch(()=>{});
+else fetch(SUPA+"/rest/v1/dispensations?employee_id=eq."+ei+"&date=eq."+dateStr2,{method:"DELETE",headers:SH}).catch(()=>{});
+return n;});};
 const cU=(ei)=>lv.filter(l=>l.ei===ei&&l.t==="Cuti"&&l.st==="Approved").reduce((a,l)=>a+l.d,0);
 const aS=(ei)=>sp.filter(s=>s.ei===ei&&new Date(s.ex)>new Date());
 const pN=lv.filter(l=>l.st==="Pending").length;
@@ -398,7 +407,7 @@ return <div className="cd"><div className="ch"><span className="ct">Dispensasi K
 {rows.length===0?<div style={{textAlign:"center",padding:24,color:"#94a3b8"}}>Tidak ada keterlambatan</div>:
 <div className="tw"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Masuk</th><th>Telat</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{rows.map(r=>{
 const isDisp=dp[r.k];
-return <tr key={r.k}><td style={{fontWeight:600}}>{r.d} {MN[r.mo]}</td><td><div className="er"><div className="av sm" style={{background:AV[r.i%9]}}>{r.e.n[0]}</div>{r.e.n}</div></td><td className="mo">{r.ci}</td><td><span style={bg("terlambat")}>+{r.lm}m</span></td><td><span style={bg(isDisp?"hadir":"terlambat")}>{isDisp?"Hadir (Dispensasi)":"Terlambat"}</span></td><td><button className={"btn bs "+(isDisp?"bd":"bo")} onClick={()=>{const nk=r.k;sDp(p=>({...p,[nk]:!p[nk]}));}}>{isDisp?"Cabut":"Dispensasi"}</button></td></tr>;})}</tbody></table></div>}</div>;};
+return <tr key={r.k}><td style={{fontWeight:600}}>{r.d} {MN[r.mo]}</td><td><div className="er"><div className="av sm" style={{background:AV[r.i%9]}}>{r.e.n[0]}</div>{r.e.n}</div></td><td className="mo">{r.ci}</td><td><span style={bg("terlambat")}>+{r.lm}m</span></td><td><span style={bg(isDisp?"hadir":"terlambat")}>{isDisp?"Hadir (Dispensasi)":"Terlambat"}</span></td><td><button className={"btn bs "+(isDisp?"bd":"bo")} onClick={()=>tD(r.e.id,r.dateStr)}>{isDisp?"Cabut":"Dispensasi"}</button></td></tr>;})}</tbody></table></div>}</div>;};
 
 const AEmp=()=><div className="cd"><div className="ch"><span className="ct">Karyawan & Jabatan</span></div><div className="tw"><table><thead><tr><th>ID</th><th>Nama</th><th>Jabatan</th><th>Tgl Gaji</th><th>Gaji Pokok</th><th>Aksi</th></tr></thead><tbody>{em.map((e,i)=>{const isE=ee===e.id;return <tr key={e.id}><td className="mo" style={{color:BR,fontWeight:600}}>{e.id}</td><td><div className="er"><div className="av" style={{background:AV[i%9]}}>{e.n[0]}</div><strong>{e.n}</strong></div></td><td>{isE?<select className="inp" value={ef.p} onChange={x=>sEf(p=>({...p,p:x.target.value}))} style={{width:130}}>{PL.map(p=><option key={p}>{p}</option>)}</select>:e.p}</td><td>{isE?<input className="inp" type="number" value={ef.pd} onChange={x=>sEf(p=>({...p,pd:+x.target.value}))} style={{width:60}}/>:<span style={bg("cuti")}>Tgl {e.pd}</span>}</td><td>{isE?<input className="inp" type="number" value={ef.s} onChange={x=>sEf(p=>({...p,s:+x.target.value}))} style={{width:120}}/>:fm(e.s)}</td><td>{isE?<div style={{display:"flex",gap:4}}><button className="btn bs" onClick={()=>{sEm(p=>p.map(x=>x.id===e.id?{...x,...ef}:x));su("employees",{position:ef.p,pay_date:ef.pd,salary:ef.s},"id=eq."+e.id);sEe(null);}}><Check size={12}/></button><button className="btn bo bs" onClick={()=>sEe(null)}><X size={12}/></button></div>:<button className="btn bo bs" onClick={()=>{sEe(e.id);sEf({p:e.p,pd:e.pd,s:e.s});}}><Edit3 size={12}/></button>}</td></tr>;})}</tbody></table></div></div>;
 
