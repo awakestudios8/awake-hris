@@ -544,9 +544,13 @@ if(jenis==="Video")accs[akun].videos++;
 const arr=Object.values(accs).sort((a,b)=>b.revenue-a.revenue);
 sAffData(arr);
 /* Save to Supabase */
-fetch(SUPA+"/rest/v1/affiliate_data",{method:"DELETE",headers:SH}).then(()=>{
-arr.forEach(a=>{fetch(SUPA+"/rest/v1/affiliate_data",{method:"POST",headers:SH,body:JSON.stringify({account:a.account,revenue:Math.round(a.revenue),orders:a.orders,cost:Math.round(a.cost),videos:a.videos})}).catch(e=>console.error("Aff save err:",e));});
-}).catch(e=>console.error("Aff delete err:",e));
+fetch(SUPA+"/rest/v1/affiliate_data?id=gt.0",{method:"DELETE",headers:SH}).then(async r=>{
+if(!r.ok)console.error("Aff delete fail:",r.status,await r.text());
+const batch=arr.map(a=>({account:a.account,revenue:Math.round(a.revenue),orders:a.orders,cost:Math.round(a.cost),videos:a.videos}));
+const r2=await fetch(SUPA+"/rest/v1/affiliate_data",{method:"POST",headers:SH,body:JSON.stringify(batch)});
+if(!r2.ok)console.error("Aff insert fail:",r2.status,await r2.text());
+else console.log("Affiliate data saved:",batch.length,"rows");
+}).catch(e=>console.error("Aff save err:",e));
 };
 
 return <div>
