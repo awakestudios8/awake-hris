@@ -367,11 +367,11 @@ const AAcc=()=><div className="cd"><div className="ch"><span className="ct">Akun
 {showReg&&<RegForm em={em} ac={ac} onError={sAe} onSubmit={(f)=>{si("accounts",{username:f.u,password:f.p,role:"employee",employee_id:f.e}).then(r=>{if(r?.[0])sAc(p=>[...p,{id:r[0].id,u:f.u,p:f.p,r:"employee",e:f.e}]);});sAe("");sShowReg(false);}} onCancel={()=>sShowReg(false)}/>}
 <div className="tw"><table><thead><tr><th>Nama</th><th>Username</th><th>Status</th></tr></thead><tbody>{em.map(e=>{const a=ac.find(x=>x.e===e.id);return <tr key={e.id}><td style={{fontWeight:600}}>{e.n}</td><td>{a?a.u:<span style={{color:"#94a3b8"}}>-</span>}</td><td>{a?<span style={bg("approved")}>Aktif</span>:<span style={bg("alpha")}>Belum</span>}</td></tr>;})}</tbody></table></div></div>;
 
-const AUpWrap=()=>{
+const AUp=()=>{
 const[upRes,sUpRes]=useState(null);const[upLog,sUpLog]=useState([]);
 const parseXls=async(file)=>{
 sUps("r");sUpRes(null);sUpLog([]);
-const XLSX=window.XLSX;if(!XLSX){sUps("err");return;}
+const XLSX=await import("https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs");
 const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array"});
 const ws=wb.Sheets[wb.SheetNames[0]];const range=XLSX.utils.decode_range(ws["!ref"]);
 const logs=[];let saved=0,skipped=0;
@@ -467,7 +467,7 @@ case"lembur":return ALbr();
 case"dispensasi":return ADisp();
 case"employees":return AEmp();
 case"accounts":return AAcc();
-case"upload":return <AUpWrap/>;
+case"upload":return AUp();
 case"emp-dash":return EDash();
 case"emp-att":return EAtt();
 case"emp-pay":return EPay();
