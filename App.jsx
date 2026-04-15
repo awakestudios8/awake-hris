@@ -606,7 +606,7 @@ const totalOrd=myData.reduce((s,a)=>s+a.orders,0);
 const totalVid=myData.reduce((s,a)=>s+a.videos,0);
 const allMapped=affData.filter(a=>affMap[a.account]).sort((a,b)=>b.revenue-a.revenue);
 const myRank=allMapped.findIndex(a=>myAccs.includes(a.account))+1;
-if(myAccs.length===0)return <div className="cd" style={{textAlign:"center",padding:32,color:"#94a3b8"}}>Belum ada akun TikTok yang tertaut ke profil Anda.</div>;
+
 return <div>
 <div className="cd">
 <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:16}}>
