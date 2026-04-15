@@ -526,37 +526,39 @@ const totalRev=leaderboard.reduce((s,a)=>s+a.revenue,0);
 const totalOrd=leaderboard.reduce((s,a)=>s+a.orders,0);
 const totalVid=leaderboard.reduce((s,a)=>s+a.videos,0);
 
+const parseRp=(s)=>{if(!s)return 0;return parseInt(String(s).replace(/[^0-9]/g,""))||0;};
 const parseAffXlsx=async(file)=>{
-const XLSX=window.XLSX;if(!XLSX)return;
+const XLSX=window.XLSX;if(!XLSX){alert("SheetJS belum loaded, refresh dulu");return;}
 const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array"});
 const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws);
-const accs={};
+console.log("Parsed rows:",rows.length,rows[0]?Object.keys(rows[0]):[]);
+const arr=[];
 rows.forEach(r=>{
-const akun=r["Akun TikTok"];if(!akun||akun==="-")return;
-const rev=parseFloat(r["Pendapatan kotor"])||0;
-const ord=parseInt(r["Pesanan SKU"])||0;
-const cost=parseFloat(r["Biaya"])||0;
-const jenis=r["Jenis materi iklan"]||"";
-if(!accs[akun])accs[akun]={account:akun,revenue:0,orders:0,cost:0,videos:0};
-accs[akun].revenue+=rev;accs[akun].orders+=ord;accs[akun].cost+=cost;
-if(jenis==="Video")accs[akun].videos++;
+const akun=r["Creator name"];if(!akun)return;
+const gmv=parseRp(r["GMV dari afiliasi"]);
+const ord=parseInt(String(r["Pesanan teratribusi"]||"0").replace(/[^0-9]/g,""))||0;
+const vid=parseInt(String(r["Video"]||"0").replace(/[^0-9]/g,""))||0;
+const live=parseInt(String(r["Siaran LIVE"]||"0").replace(/[^0-9]/g,""))||0;
+const komisi=parseRp(r["Perkiraan komisi"]);
+const produk=parseInt(String(r["Produk yang terjual melalui afiliasi"]||"0").replace(/[^0-9]/g,""))||0;
+arr.push({account:akun,revenue:gmv,orders:ord,videos:vid,live,komisi,produk,cost:0});
 });
-const arr=Object.values(accs).sort((a,b)=>b.revenue-a.revenue);
+arr.sort((a,b)=>b.revenue-a.revenue);
+console.log("Affiliator parsed:",arr.length,"creators",arr.slice(0,3));
 sAffData(arr);
 /* Save to Supabase */
+const batch=arr.map(a=>({account:a.account,revenue:Math.round(a.revenue),orders:a.orders,cost:0,videos:a.videos,live:a.live||0,komisi:Math.round(a.komisi||0),produk:a.produk||0}));
 fetch(SUPA+"/rest/v1/affiliate_data?id=gt.0",{method:"DELETE",headers:SH}).then(async r=>{
-if(!r.ok)console.error("Aff delete fail:",r.status,await r.text());
-const batch=arr.map(a=>({account:a.account,revenue:Math.round(a.revenue),orders:a.orders,cost:Math.round(a.cost),videos:a.videos}));
 const r2=await fetch(SUPA+"/rest/v1/affiliate_data",{method:"POST",headers:SH,body:JSON.stringify(batch)});
-if(!r2.ok)console.error("Aff insert fail:",r2.status,await r2.text());
+if(!r2.ok){const t=await r2.text();console.error("Aff insert fail:",r2.status,t);alert("Gagal simpan: "+r2.status);}
 else console.log("Affiliate data saved:",batch.length,"rows");
-}).catch(e=>console.error("Aff save err:",e));
+}).catch(e=>{console.error("Aff save err:",e);alert("Error simpan affiliate");});
 };
 
 return <div>
 <div className="cd">
 <div className="ch"><span className="ct">Upload Data TikTok</span></div>
-<div className="ua"><label style={{cursor:"pointer",display:"block"}}><input type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(f)parseAffXlsx(f);e.target.value="";}}/><Upload size={28} color={BR} style={{marginBottom:6}}/><div style={{fontWeight:700,fontSize:14}}>Upload .xlsx dari TikTok Seller Center</div><div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>Export creative data for product campaigns</div></label></div>
+<div className="ua"><label style={{cursor:"pointer",display:"block"}}><input type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(f)parseAffXlsx(f);e.target.value="";}}/><Upload size={28} color={BR} style={{marginBottom:6}}/><div style={{fontWeight:700,fontSize:14}}>Upload Creator List (.xlsx)</div><div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>Transaction Analysis → Creator List</div></label></div>
 </div>
 
 {leaderboard.length>0&&<>
