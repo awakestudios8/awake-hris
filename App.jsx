@@ -341,6 +341,7 @@ const[chpw,sChpw]=useState({o:"",n:"",c:""});
 const[saldoHidden,sSaldoHidden]=useState(true);
 const[fabOpen,sFabOpen]=useState(false);
 const[refreshing,sRefreshing]=useState(false);
+const[selPr,sSelPr]=useState("");
 const[affData,sAffData]=useState([]);
 const[affMap,sAffMap]=useState({});
 const[affMapEdit,sAffMapEdit]=useState({acc:"",eid:""});
@@ -748,7 +749,7 @@ return <div className="cd"><div className="ch"><span className="ct">Upload Deli 
 const EAtt=()=>{if(!le)return null;const pr=getPR(le.pd);const days=[];for(let dt=new Date(pr.ed);dt>=pr.sd;dt.setDate(dt.getDate()-1)){days.push(new Date(dt));}const today2=new Date();today2.setHours(0,0,0,0);
 return <div className="cd"><div className="ch"><span className="ct">Kehadiran</span></div><div style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>Periode: <strong style={{color:"#0f172a"}}>{pLbl(le.pd)}</strong></div><div className="tw"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th></tr></thead><tbody>{days.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today2)return null;const a=gA(le.id,d,new Date(dt));const we=w===0;const hol=isHoliday(new Date(dt));if((we||hol)&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.3}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={4} style={{color:"#cbd5e1"}}>{hol||"Libur"}</td></tr>;if(a.st==="-")return null;return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td><span style={bg(safeSt(a.st).toLowerCase())}>{safeSt(a.st)}</span></td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}{a.obk>0?" (-"+a.obk+"m istirahat)":""}</span>:"-"}</td></tr>;}).filter(Boolean)}</tbody></table></div></div>;};
 
-const EPay=()=>{if(!le)return null;const pds=eSP(le.id);const[selPr,sSelPr]=useState("");const curPr=selPr||pds[0]||"";
+const EPay=()=>{if(!le)return null;const pds=eSP(le.id);const curPr=selPr||pds[0]||"";
 return <div className="mn-inner">
 {pds.length===0?
 <div className="cd" style={{textAlign:"center",padding:40,color:"var(--text2)"}}><FileText size={32} style={{margin:"0 auto 8px",opacity:0.3}}/><div>Belum ada slip gaji.</div><div style={{fontSize:11,marginTop:4}}>Admin belum membuat slip gaji untuk Anda.</div></div>
