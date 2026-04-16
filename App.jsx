@@ -427,14 +427,14 @@ return <><style>{css}</style><div className="abg"><div className="abx">
 </div>
 <div className="acd">
 <label className="lb">Username</label><input className="inp" value={lf.u} onChange={e=>sLf(p=>({...p,u:e.target.value}))} placeholder="Masukkan username"/>
-<label className="lb">Password</label><input className="inp" type="password" value={lf.p} onChange={e=>sLf(p=>({...p,p:e.target.value}))} placeholder="Masukkan password" onKeyDown={e=>{if(e.key==="Enter"){const a=ac.find(x=>x.u===lf.u&&x.p===lf.p);if(!a){sAe("Username atau password salah");return;}if(a.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"admin",u:btoa(a.u)}));}catch(e){}}else{const empData=em.find(x=>x.id===a.e);sLe(empData);sRl("employee");sVw("emp-dash");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"employee",u:btoa(a.u),eid:a.e}));}catch(e){}}}}}/>
+<label className="lb">Password</label><input className="inp" type="password" value={lf.p} onChange={e=>sLf(p=>({...p,p:e.target.value}))} placeholder="Masukkan password" onKeyDown={async(e)=>{if(e.key==="Enter"){let accs=ac;if(!accs.length){const r=await sf("accounts");if(r?.length){accs=r.map(a=>({id:a.id,u:a.username,p:a.password,r:a.role,e:a.employee_id}));sAc(accs);}else{sAe("Tidak dapat terhubung ke server.");return;}}const a=accs.find(x=>x.u===lf.u&&x.p===lf.p);if(!a){sAe("Username atau password salah");return;}if(a.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"admin",u:btoa(a.u)}));}catch(e){}}else{const empData=em.find(x=>x.id===a.e);sLe(empData);sRl("employee");sVw("emp-dash");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"employee",u:btoa(a.u),eid:a.e}));}catch(e){}}}}}/>
 {ae&&<div className="aer"><AlertTriangle size={14}/>{ae}</div>}
-<button className="asb" style={{marginTop:20}} onClick={()=>{if(!ac.length){sAe("Gagal terhubung ke database. Pastikan tabel accounts sudah dibuat di Supabase.");return;}const a=ac.find(x=>x.u===lf.u&&x.p===lf.p);if(!a){sAe("Username atau password salah");return;}if(a.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"admin",u:btoa(a.u)}));}catch(e){}}else{const empData=em.find(x=>x.id===a.e);sLe(empData);sRl("employee");sVw("emp-dash");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"employee",u:btoa(a.u),eid:a.e}));}catch(e){}}}}>Masuk ke Dashboard</button>
+<button className="asb" style={{marginTop:20}} onClick={async()=>{let accs=ac;if(!accs.length){sAe("Memuat data akun...");const r=await sf("accounts");if(r?.length){accs=r.map(a=>({id:a.id,u:a.username,p:a.password,r:a.role,e:a.employee_id}));sAc(accs);}else{sAe("Tidak dapat terhubung ke server. Cek koneksi internet Anda dan coba lagi.");return;}}const a=accs.find(x=>x.u===lf.u&&x.p===lf.p);if(!a){sAe("Username atau password salah");return;}if(a.r==="admin"){sRl("admin");sVw("dashboard");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"admin",u:btoa(a.u)}));}catch(e){}}else{let emps=em;if(!emps.length){const r2=await sf("employees","?order=name");if(r2?.length){emps=r2.map(e=>({id:e.id,n:e.name,d:e.department,p:e.position,pd:e.pay_date,s:e.salary}));sEm(emps);}}const empData=emps.find(x=>x.id===a.e);sLe(empData);sRl("employee");sVw("emp-dash");sPg("app");try{sessionStorage.setItem("hris_session",JSON.stringify({r:"employee",u:btoa(a.u),eid:a.e}));}catch(e){}}}}>Masuk ke Dashboard</button>
 <div style={{textAlign:"center",marginTop:16,fontSize:11,color:"var(--text2)",fontWeight:500}}>Akun dibuat oleh admin perusahaan</div>
 </div></div></div></>;
 }
 
-const SlipEd=({ei,pr,ex,onSv,onCn})=>{const emp=em.find(e=>e.id===ei);const[it,sIt]=useState(ex?.it||[{l:"Gaji Pokok",a:emp?.s||0,t:"i"},{l:"Transport",a:300000,t:"i"},{l:"Makan",a:450000,t:"i"},{l:"BPJS",a:Math.round((emp?.s||0)*.04),t:"d"},{l:"PPh 21",a:Math.round((emp?.s||0)*.025),t:"d"}]);const[nt,sNt]=useState(ex?.nt||"");const tot=gST(it);
+const SlipEd=({ei,pr,ex,onSv,onCn})=>{const emp=em.find(e=>e.id===ei);const[it,sIt]=useState(ex?.it||[{l:"Gaji Pokok",a:emp?.s||0,t:"i"},{l:"Komisi Affiliate",a:0,t:"i"},{l:"Bonus Lembur",a:0,t:"i"}]);const[nt,sNt]=useState(ex?.nt||"");const tot=gST(it);
 return <div style={{background:"#f8f9fb",borderRadius:14,padding:20,border:"1px solid #eef1f5",marginBottom:12}}>
 <h3 style={{fontSize:14,fontWeight:700,color:BR,marginBottom:12}}>{ex?"Edit":"Buat"} Slip — {pr}</h3>
 <div style={{fontSize:12,fontWeight:700,color:"#16a34a",marginBottom:6}}>PENDAPATAN</div>
@@ -467,18 +467,22 @@ const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Perio
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
 const EDash=()=>{if(!le)return null;const rc=pR(le.id,le.pd),cu=CQ-cU(le.id),spp=aS(le.id),ml=lv.filter(l=>l.ei===le.id).slice(0,3);const prd=pLbl(le.pd);
-const gaji=le.s||0;
+const empPds=eSP(le.id);
+const latestPr=empPds[0];
+const latestSlip=latestPr?sl[le.id]?.[latestPr]:null;
+const gaji=latestSlip?gST(latestSlip.it).n:0;
+const slipStatus=latestSlip?"Slip "+latestPr:"Belum tersedia";
 return <div className="mn-inner">
 <div className="hero-red">
 <div className="hrt">
 <div className="hrt-lbl"><TrendingUp size={12}/>GAJI BULAN INI</div>
 <button className="hrt-eye" onClick={()=>sSaldoHidden(!saldoHidden)}>{saldoHidden?<EyeOff size={14}/>:<Eye size={14}/>}</button>
 </div>
-<div className={"hrh"+(saldoHidden?" hidden":"")}>{saldoHidden?"Rp ••••••••":"Rp "+fm(gaji)}</div>
-<div className="hrd">Periode {prd}</div>
+<div className={"hrh"+(saldoHidden?" hidden":"")}>{saldoHidden?"Rp ••••••••":(gaji>0?fm(gaji):"Belum ada slip")}</div>
+<div className="hrd">{slipStatus}</div>
 <div className="hrsp">
 <div><div className="hrsp-l">KEHADIRAN</div><div className="hrsp-v">{rc.h} hari</div></div>
-<div><div className="hrsp-l">LEMBUR</div><div className="hrsp-v">{fj(rj(rc.ol+rc.ow))} jam</div></div>
+<div><div className="hrsp-l">LEMBUR</div><div className="hrsp-v">{fj(rj(rc.ol+rc.ow))}</div></div>
 </div>
 <div className="hrb"><div className="hrbf" style={{width:Math.min(100,rc.h*5)+"%"}}></div></div>
 </div>
