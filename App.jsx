@@ -56,6 +56,23 @@ if(d>=pd){sd=new Date(y,m,pd);ed=new Date(y,m+1,pd-1);}
 else{sd=new Date(y,m-1,pd);ed=new Date(y,m,pd-1);}
 return{sd,ed};
 };
+const getPR_o=(pd,off=0)=>{
+const ref=new Date();ref.setMonth(ref.getMonth()-off);
+const y=ref.getFullYear();const m=ref.getMonth();const d=ref.getDate();
+if(pd===1){return{sd:new Date(y,m,1),ed:new Date(y,m+1,0)};}
+let sd,ed;
+if(d>=pd){sd=new Date(y,m,pd);ed=new Date(y,m+1,pd-1);}
+else{sd=new Date(y,m-1,pd);ed=new Date(y,m,pd-1);}
+return{sd,ed};
+};
+const pLbl_o=(pd,off=0)=>{
+const pr=getPR_o(pd,off);
+const s=pr.sd;const e=pr.ed;
+return s.getDate()+" "+MN[s.getMonth()]+" - "+e.getDate()+" "+MN[e.getMonth()]+" "+e.getFullYear();
+};
+const genPeriods=(pd,count=6)=>{
+const arr=[];for(let i=0;i<count;i++){arr.push({off:i,lbl:pLbl_o(pd,i)});}return arr;
+};
 
 
 const css=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');:root{color-scheme:light only;--br:#AF1917;--br2:#8a1412;--br3:#6b0f0e;--bg:#f5f3ec;--text:#0f0f0f;--text2:#64748b;--text3:#94a3b8;--brd:#eef1f5}*{box-sizing:border-box;margin:0;padding:0}html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff!important;color:var(--text)!important;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
@@ -342,6 +359,7 @@ const[saldoHidden,sSaldoHidden]=useState(true);
 const[fabOpen,sFabOpen]=useState(false);
 const[refreshing,sRefreshing]=useState(false);
 const[selPr,sSelPr]=useState("");
+const[perOff,sPerOff]=useState(0);
 const[affData,sAffData]=useState([]);
 const[affMap,sAffMap]=useState({});
 const[affMapEdit,sAffMapEdit]=useState({acc:"",eid:""});
@@ -501,7 +519,23 @@ const nav=rl==="admin"?aN:eN;
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
-const EDash=()=>{if(!le)return null;const rc=pR(le.id,le.pd),cu=CQ-cU(le.id),spp=aS(le.id),ml=lv.filter(l=>l.ei===le.id).slice(0,3);const prd=pLbl(le.pd);
+const pR_o=(ei,pd,off=0)=>{let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;
+const pr=getPR_o(pd,off);const today=new Date();today.setHours(0,0,0,0);
+for(let dt=new Date(pr.sd);dt<=pr.ed;dt.setDate(dt.getDate()+1)){
+const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today)continue;
+const d=dt.getDate();const w=dt.getDay();const hol=isHoliday(chk);
+if(w===0||hol){const at=gA(ei,d,new Date(dt));if(at.oh>0)ow=rj(ow+at.oh);continue;}
+const at=gA(ei,d,new Date(dt));
+const sts=safeSt(at.st);
+if(sts==="Hadir"||sts==="Terlambat")h++;
+else if(sts==="Alpha")a++;
+else if(sts==="Sakit")sk++;
+else if(sts==="Izin")iz++;
+else if(sts==="Cuti")ct++;
+if(sts==="Terlambat")t++;
+if(at.oh>0)ol=rj(ol+at.oh);
+}return{h,t,a,ol,ow,iz,sk,ct};};
+const EDash=()=>{if(!le)return null;const rc=pR_o(le.id,le.pd,perOff),cu=CQ-cU(le.id),spp=aS(le.id),ml=lv.filter(l=>l.ei===le.id).slice(0,3);const prd=pLbl_o(le.pd,perOff);const periods=genPeriods(le.pd,6);
 const empPds=eSP(le.id);
 const latestPr=empPds[0];
 const latestSlip=latestPr?sl[le.id]?.[latestPr]:null;
@@ -520,6 +554,13 @@ return <div className="mn-inner">
 <div><div className="hrsp-l">LEMBUR</div><div className="hrsp-v">{fj(rj(rc.ol+rc.ow))}</div></div>
 </div>
 <div className="hrb"><div className="hrbf" style={{width:Math.min(100,rc.h*5)+"%"}}></div></div>
+</div>
+
+<div className="cd">
+<div className="ch"><span className="ct">Periode Rekap</span></div>
+<select className="inp" value={perOff} onChange={e=>sPerOff(Number(e.target.value))} style={{width:"100%",fontSize:14}}>
+{periods.map(p=><option key={p.off} value={p.off}>{p.lbl}{p.off===0?" (Sekarang)":""}</option>)}
+</select>
 </div>
 
 <div className="mtg">
@@ -746,7 +787,7 @@ return <div className="cd"><div className="ch"><span className="ct">Upload Deli 
 <strong>Data manual yang sudah diinput sebelumnya TIDAK akan ditimpa</strong>
 </div></div>;};
 
-const EAtt=()=>{if(!le)return null;const pr=getPR(le.pd);const days=[];for(let dt=new Date(pr.ed);dt>=pr.sd;dt.setDate(dt.getDate()-1)){days.push(new Date(dt));}const today2=new Date();today2.setHours(0,0,0,0);
+const EAtt=()=>{if(!le)return null;const pr=getPR_o(le.pd,perOff);const days=[];for(let dt=new Date(pr.ed);dt>=pr.sd;dt.setDate(dt.getDate()-1)){days.push(new Date(dt));}const today2=new Date();today2.setHours(0,0,0,0);
 return <div className="cd"><div className="ch"><span className="ct">Kehadiran</span></div><div style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>Periode: <strong style={{color:"#0f172a"}}>{pLbl(le.pd)}</strong></div><div className="tw"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Lembur</th></tr></thead><tbody>{days.map(dt=>{const d=dt.getDate();const mo=dt.getMonth();const w=dt.getDay();const dn=["Min","Sen","Sel","Rab","Kam","Jum","Sab"][w];const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today2)return null;const a=gA(le.id,d,new Date(dt));const we=w===0;const hol=isHoliday(new Date(dt));if((we||hol)&&!a.wt)return <tr key={dt.toISOString()} style={{opacity:.3}}><td>{d} {MN[mo]}</td><td style={{color:BR}}>{dn}</td><td colSpan={4} style={{color:"#cbd5e1"}}>{hol||"Libur"}</td></tr>;if(a.st==="-")return null;return <tr key={dt.toISOString()}><td style={{fontWeight:600}}>{d} {MN[mo]}</td><td style={{color:we?BR:"inherit"}}>{dn}</td><td className="mo">{a.ci||"-"}</td><td className="mo">{a.co||"-"}</td><td><span style={bg(safeSt(a.st).toLowerCase())}>{safeSt(a.st)}</span></td><td>{a.oh>0?<span style={bg(a.wt?"lembur hari libur":"lembur")}>{fj(a.oh)}{a.obk>0?" (-"+a.obk+"m istirahat)":""}</span>:"-"}</td></tr>;}).filter(Boolean)}</tbody></table></div></div>;};
 
 const EPay=()=>{if(!le)return null;const pds=eSP(le.id);const curPr=selPr||pds[0]||"";
