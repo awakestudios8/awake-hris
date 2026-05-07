@@ -578,7 +578,7 @@ const inc3=dt.it?.filter(x=>x.t==="i")||[];const ded3=dt.it?.filter(x=>x.t==="d"
 const pd5=emp.pd||1;
 const prdL3=(()=>{if(pI3<0)return pr;if(pd5===1)return"1 - "+(new Date(pY3,pI3+1,0).getDate())+" "+MNS3[pI3]+" "+pY3;const s3=new Date(pY3,pI3,pd5);const e3=new Date(pY3,pI3+1,pd5-1);return s3.getDate()+" "+MNS3[s3.getMonth()]+" - "+e3.getDate()+" "+MNS3[e3.getMonth()]+" "+pY3;})();
 const el=document.createElement("div");
-el.style.cssText="position:fixed;left:-9999px;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;";
+el.style.cssText="position:absolute;left:0;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;z-index:9999;opacity:0.01;";
 var h2c="";
 h2c+="<div style='text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:2px solid #f5f3ec'>";
 h2c+="<div style='width:80px;height:48px;background:#AF1917;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px'><img src='"+LW+"' style='height:32px' alt=''/></div>";
@@ -620,10 +620,47 @@ Share</button>
 const btn2=event.currentTarget;btn2.disabled=true;btn2.textContent="Membuat...";
 try{
 const el2=document.createElement("div");
-el2.style.cssText="position:fixed;left:-9999px;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;";
-el2.innerHTML=document.querySelector(".slip")?.innerHTML||"";
+el2.style.cssText="position:absolute;left:0;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;z-index:9999;opacity:0.01;";
+const MNS4=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const pI4=MNS4.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
+const pY4=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
+const rc4=(()=>{if(!emp||pI4<0)return{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};
+const pd6=emp.pd||1;let sd4,ed4;
+if(pd6===1){sd4=new Date(pY4,pI4,1);ed4=new Date(pY4,pI4+1,0);}
+else{sd4=new Date(pY4,pI4,pd6);ed4=new Date(pY4,pI4+1,pd6-1);}
+let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0;const td=new Date();td.setHours(0,0,0,0);
+for(let d3=new Date(sd4);d3<=ed4;d3.setDate(d3.getDate()+1)){
+const ck=new Date(d3);ck.setHours(0,0,0,0);if(ck>td)continue;
+const dy=d3.getDate();const w=d3.getDay();const hl=isHoliday(ck);
+if(w===0||hl){const at2=gA(emp.id,dy,new Date(d3));if(at2.oh>0)ow=rj(ow+at2.oh);continue;}
+const at2=gA(emp.id,dy,new Date(d3));const st2=safeSt(at2.st);
+if(st2==="Hadir"||st2==="Terlambat")h++;else if(st2==="Alpha")a++;else if(st2==="Sakit")sk++;else if(st2==="Izin")iz++;
+if(st2==="Terlambat")t++;if(at2.oh>0)ol=rj(ol+at2.oh);
+}return{h,t,a,ol,ow,iz,sk};})();
+const lbr4=fj(rj(rc4.ol+rc4.ow));const inc4=dt.it?.filter(x=>x.t==="i")||[];const ded4=dt.it?.filter(x=>x.t==="d")||[];
+const pd7=emp.pd||1;
+const prdL4=(()=>{if(pI4<0)return pr;if(pd7===1)return"1 - "+(new Date(pY4,pI4+1,0).getDate())+" "+MNS4[pI4]+" "+pY4;const s=new Date(pY4,pI4,pd7);const e=new Date(pY4,pI4+1,pd7-1);return s.getDate()+" "+MNS4[s.getMonth()]+" - "+e.getDate()+" "+MNS4[e.getMonth()]+" "+pY4;})();
+var hd="";
+hd+="<div style='text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:2px solid #f5f3ec'>";
+hd+="<div style='width:80px;height:48px;background:#AF1917;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px'><img src='"+LW+"' style='height:32px' alt=''/></div>";
+hd+="<div style='font-size:16px;font-weight:800'>Awake Studios</div>";
+hd+="<div style='font-size:11px;color:#64748b;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:4px'>Slip Gaji · "+pr+"</div></div>";
+hd+="<div style='display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid #f0f0f0'><span style='color:#64748b'>Nama</span><strong>"+(emp?.n||"")+"</strong></div>";
+hd+="<div style='display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid #f0f0f0'><span style='color:#64748b'>Jabatan</span><span style='font-weight:600'>"+(emp?.p||"-")+"</span></div>";
+hd+="<div style='font-size:10px;color:#64748b;text-align:center;margin:14px 0 6px;font-weight:600'>Periode absen: "+prdL4+"</div>";
+hd+="<div style='display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:16px;padding:12px;background:#f5f3ec;border-radius:10px'>";
+[[""+rc4.h,"Hadir"],[""+rc4.sk,"Sakit"],[""+rc4.iz,"Izin"],[""+rc4.t,"Telat"],[""+rc4.a,"Alpha"],[lbr4,"Lembur"]].forEach(function(r){hd+="<div style='text-align:center'><div style='font-size:16px;font-weight:800"+(r[1]==="Lembur"?";color:#AF1917":"")+"'>"+r[0]+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>"+r[1]+"</div></div>";});
+hd+="</div>";
+hd+="<div style='font-size:10px;font-weight:800;color:#AF1917;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Pendapatan</div>";
+inc4.forEach(function(x){hd+="<div style='display:flex;justify-content:space-between;padding:7px 0;font-size:12px;border-bottom:1px solid #f5f3ec'><span>"+x.l+"</span><span style='font-weight:700'>"+fm(x.a)+"</span></div>";});
+if(ded4.length){hd+="<div style='font-size:10px;font-weight:800;color:#AF1917;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;padding-top:10px;border-top:2px solid #f5f3ec'>Potongan</div>";
+ded4.forEach(function(x){hd+="<div style='display:flex;justify-content:space-between;padding:7px 0;font-size:12px;border-bottom:1px solid #f5f3ec'><span>"+x.l+"</span><span style='font-weight:700;color:#AF1917'>-"+fm(x.a)+"</span></div>";});}
+hd+="<div style='background:linear-gradient(135deg,#AF1917,#6b0f0e);color:#fff;padding:14px 16px;border-radius:12px;margin-top:16px;display:flex;justify-content:space-between;font-weight:800;font-size:15px'><span>TOTAL DITERIMA</span><span style='font-size:17px'>"+fm(tot.n)+"</span></div>";
+if(dt.nt)hd+="<div style='margin-top:14px;padding:10px 14px;background:#f5f3ec;border-radius:10px;font-size:11px;color:#64748b;font-style:italic'>"+dt.nt+"</div>";
+hd+="<div style='text-align:center;font-size:9px;color:#bbb;margin-top:20px;padding-top:14px;border-top:1px solid #f0f0f0'>Dicetak dari Awake HRIS · "+new Date().toLocaleDateString("id-ID")+"</div>";
+el2.innerHTML=hd;
 document.body.appendChild(el2);
-const canvas2=await window.html2canvas(el2,{scale:2,useCORS:true,backgroundColor:"#ffffff"});
+const canvas2=await window.html2canvas(el2,{scale:2,useCORS:true,backgroundColor:"#ffffff",logging:false});
 document.body.removeChild(el2);
 const blob2=await new Promise(r=>canvas2.toBlob(r,"image/png"));
 const url2=URL.createObjectURL(blob2);const a2=document.createElement("a");a2.href=url2;a2.download="Slip_"+(emp?.n||"")+"_"+pr.replace(/\s/g,"_")+".png";a2.click();URL.revokeObjectURL(url2);
@@ -639,7 +676,7 @@ Download</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v4.0";
+const APP_VER="v4.1";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
