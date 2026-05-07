@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Home, Clock, Calendar, Wallet, FileText, Shield, Upload, Users, Bell, LogOut, Menu, Check, X, Plus, Trash2, Edit3, AlertTriangle, UserCheck, TrendingUp, Key, Sun, Coffee, Award, Eye, EyeOff, Settings, RefreshCw } from "lucide-react";
+import { jsPDF } from "jspdf";
 
-const loadScript=(url)=>new Promise((res,rej)=>{if(document.querySelector('script[src="'+url+'"]'))return res();const s=document.createElement("script");s.src=url;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+
 
 
 
@@ -561,8 +562,6 @@ return <div style={{margin:"12px 0 4px"}}><div style={{fontSize:10,color:"var(--
 <button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={async()=>{
 const btn=event.currentTarget;const origText=btn.innerHTML;btn.disabled=true;btn.textContent="Membuat PDF...";
 try{
-await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js");
-const{jsPDF}=window.jspdf;
 const doc=new jsPDF({unit:"mm",format:"a5",orientation:"portrait"});
 const W=148;const mg=16;const cw=W-mg*2;let y=18;
 /* Header */
@@ -657,8 +656,6 @@ WhatsApp PDF</button>
 <button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={async()=>{
 const btn2=event.currentTarget;btn2.disabled=true;btn2.textContent="Download...";
 try{
-await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js");
-const{jsPDF}=window.jspdf;
 const doc=new jsPDF({unit:"mm",format:"a5"});
 const W=148;const mg=16;const cw=W-mg*2;let y=18;
 doc.setFillColor(175,25,23);doc.roundedRect(mg+cw/2-18,y,36,20,4,4,"F");
@@ -697,7 +694,7 @@ Download PDF</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v4.4";
+const APP_VER="v4.5";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
