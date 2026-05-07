@@ -408,7 +408,7 @@ input[type="date"].inp::-webkit-calendar-picker-indicator,input[type="time"].inp
 .sr strong{font-weight:700;color:var(--text)}
 .ssc{font-size:10px;font-weight:800;color:var(--br);text-transform:uppercase;letter-spacing:1.2px;margin:16px 0 6px;padding-top:12px;border-top:2px solid var(--bg)}
 .ssc:first-of-type{margin-top:8px;padding-top:0;border-top:none}
-.srt{border-top:2px solid var(--text);padding-top:14px!important;margin-top:10px;font-weight:800;font-size:15px;border-bottom:none!important;background:linear-gradient(135deg,var(--br),var(--br2) 60%,var(--br3));color:#fff;padding:14px 16px!important;border-radius:14px;margin-top:14px}
+.srt{background:var(--br);color:#fff;padding:16px 18px!important;border-radius:14px;margin-top:16px;font-weight:800;font-size:15px;border:none!important}
 .srt span:last-child{color:#fff!important;font-size:17px;font-weight:800;letter-spacing:-0.3px}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@media(prefers-color-scheme:dark){html,body,.cd,.sc,.mtr,.stc{background:#fff!important;color:var(--text)!important}}
 `;
