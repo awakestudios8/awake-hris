@@ -518,7 +518,7 @@ return <div className="slip"><div className="slH"><img src={LR} alt="Awake"/><di
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v2.7";
+const APP_VER="v2.8";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
@@ -717,13 +717,35 @@ const AUpWrap=()=>{
 const[upRes,sUpRes]=useState(null);const[upLog,sUpLog]=useState([]);
 const parseXls=async(file)=>{
 sUps("r");sUpRes(null);sUpLog([]);
-/* Clear previous upload entries from manAtt (keep manual ones) */
-sManAtt(prev=>{const keep={};Object.entries(prev).forEach(([k,v])=>{if(typeof v==="object"&&v.src==="manual")keep[k]=v;else if(typeof v==="string")keep[k]=v;});return keep;});
 const XLSX=window.XLSX;if(!XLSX){sUps("err");return;}
 const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array"});
 const ws=wb.Sheets[wb.SheetNames[0]];const range=XLSX.utils.decode_range(ws["!ref"]);
 const logs=[];let saved=0,skipped=0;
-/* Parse employees: every 3 rows */
+
+/* Parse attendance date range from header */
+let rangeStart=null,rangeEnd=null;
+for(let r=0;r<Math.min(10,range.e.r);r++){
+for(let c=0;c<=range.e.c;c++){
+const cell=ws[XLSX.utils.encode_cell({r,c})];
+if(cell&&String(cell.v).includes("Attendance date:")){
+const m=String(cell.v).match(/(\d{4})-(\d{2})-(\d{2})~(\d{4})-(\d{2})-(\d{2})/);
+if(m){rangeStart=new Date(+m[1],+m[2]-1,+m[3]);rangeEnd=new Date(+m[4],+m[5]-1,+m[6]);}
+}}}
+if(!rangeStart){
+/* Fallback: use current month */
+const now=new Date();rangeStart=new Date(now.getFullYear(),now.getMonth(),1);
+rangeEnd=new Date(now.getFullYear(),now.getMonth()+1,0);
+logs.push("Peringatan: Tidak ditemukan range tanggal di file, menggunakan bulan ini");
+}
+logs.push("Periode: "+rangeStart.toLocaleDateString("id-ID")+" - "+rangeEnd.toLocaleDateString("id-ID"));
+
+/* Build day→date mapping from range */
+const dayMap={};
+for(let dt=new Date(rangeStart);dt<=rangeEnd;dt.setDate(dt.getDate()+1)){
+dayMap[dt.getDate()]=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");
+}
+
+/* Parse employees: every 3-4 rows */
 for(let r=range.s.r;r<=range.e.r;r++){
 const uidCell=ws[XLSX.utils.encode_cell({r,c:4})];
 if(uidCell&&String(uidCell.v)==="User ID:"){
@@ -731,26 +753,35 @@ const idCell=ws[XLSX.utils.encode_cell({r,c:5})];
 const nameCell=ws[XLSX.utils.encode_cell({r,c:11})];
 if(!idCell)continue;
 let eid=String(idCell.v).trim();if(eid.includes('.'))eid=String(parseInt(eid));const ename=nameCell?String(nameCell.v).trim():"";
-/* Date header row = r+1, punch row = r+2 */
-const dateRow=r+1;const punchRow=r+2;
-for(let c=1;c<=31;c++){
+/* Date header row = r+1, punch rows = r+2 and r+3 */
+const dateRow=r+1;const punchRow=r+2;const punchRow2=r+3;
+/* Read date columns */
+const dateCols={};
+for(let c=1;c<=range.e.c;c++){
 const dc=ws[XLSX.utils.encode_cell({r:dateRow,c})];
 if(!dc)continue;
 const day=Math.round(Number(dc.v));if(!day||day<1||day>31)continue;
-const pc=ws[XLSX.utils.encode_cell({r:punchRow,c})];
-const punchStr=pc?String(pc.v).trim():"";
-const now=new Date();const yr=now.getFullYear();const mo=now.getMonth();
-const dateStr=yr+"-"+String(mo+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");
-const dt=new Date(yr,mo,day);
+dateCols[c]=day;
+}
+
+for(const[colStr,day] of Object.entries(dateCols)){
+const c=Number(colStr);
+const dateStr=dayMap[day];
+if(!dateStr)continue;
+const dt=new Date(dateStr+"T00:00:00");
 const isHol=isHoliday(dt)||dt.getDay()===0;
+
+/* Read punches from row r+2 */
+const pc=ws[XLSX.utils.encode_cell({r:punchRow,c})];
+const pc2=ws[XLSX.utils.encode_cell({r:punchRow2,c})];
+let punchStr=pc?String(pc.v).trim():"";
+if(pc2){const p2=String(pc2.v).trim();if(p2)punchStr+="\n"+p2;}
+
 if(!punchStr){
-/* No punch - check if manual data exists, keep it */
 const existingKey=eid+"-"+dateStr;
 if(manAtt[existingKey]){skipped++;continue;}
-/* Check leaves */
 const hasLeave=lv.find(l=>l.ei===eid&&l.st==="Approved"&&dateStr>=l.s&&dateStr<=l.e);
-if(hasLeave){skipped++;logs.push(ename+" "+day+": "+hasLeave.t+" (dari database)");continue;}
-if(dt<=now&&!isHol){logs.push(ename+" "+day+": Kosong (tidak diubah)");}
+if(hasLeave){skipped++;continue;}
 skipped++;continue;
 }
 /* Parse punches */
@@ -760,17 +791,17 @@ const ci=punches[0]||null;const co=punches[1]||null;
 const oi=punches[2]||null;const oo=punches[3]||null;
 let status="Hadir";let wt=false;
 if(isHol&&punches.length>=2){status="Lembur Hari Libur";wt=true;}
-/* Save to daily_status - only if no manual override exists */
+/* Skip if manual override exists */
 const existingKey2=eid+"-"+dateStr;
 const existing=manAtt[existingKey2];
 if(existing&&typeof existing==="object"&&existing.src==="manual"){
 logs.push(ename+" "+day+": Data manual, skip");skipped++;continue;
 }
-/* Save punch data as JSON */
-const punchData={st:status,ci:wt?null:ci,co:wt?null:co,oi:wt?ci:oi,oo:wt?co:oo,wt,src:"upload"};
+/* Save punch data */
+const punchData={st:status,ci:wt?null:ci,co:wt?null:co,oi:wt?ci:oi,oo:wt?co:oo,wt,src:"upload",p:punches};
 sManAtt(p=>({...p,[existingKey2]:punchData}));
 const saveStr=JSON.stringify(punchData);
-try{await fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:eid,date:dateStr,status:saveStr})});saved++;logs.push(ename+" "+day+": "+status+" ("+punches.join(", ")+")");}catch(e){logs.push(ename+" "+day+": GAGAL simpan");}
+try{await fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:eid,date:dateStr,status:saveStr})});saved++;logs.push(ename+" "+day+" "+MN[dt.getMonth()]+": "+status+" ("+punches.join(", ")+")");}catch(e){logs.push(ename+" "+day+": GAGAL simpan");}
 }}}
 sUpRes({saved,skipped});sUps("d");sUpLog(logs);
 };
