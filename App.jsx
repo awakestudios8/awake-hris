@@ -520,7 +520,7 @@ let sd,ed;
 if(pIdx>=0){
 const pd=emp.pd||1;
 if(pd===1){sd=new Date(pYr,pIdx,1);ed=new Date(pYr,pIdx+1,0);}
-else{sd=new Date(pYr,pIdx-1,pd);ed=new Date(pYr,pIdx,pd-1);}
+else{sd=new Date(pYr,pIdx,pd);ed=new Date(pYr,pIdx+1,pd-1);}
 }else{sd=new Date();ed=new Date();}
 /* Calculate rekap for this exact period */
 const rc=(()=>{let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;
@@ -560,7 +560,7 @@ const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
 const rc2=(()=>{if(!emp||pI2<0)return{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};
 const pd3=emp.pd||1;let sd2,ed2;
 if(pd3===1){sd2=new Date(pY2,pI2,1);ed2=new Date(pY2,pI2+1,0);}
-else{sd2=new Date(pY2,pI2-1,pd3);ed2=new Date(pY2,pI2,pd3-1);}
+else{sd2=new Date(pY2,pI2,pd3);ed2=new Date(pY2,pI2+1,pd3-1);}
 let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;const td=new Date();td.setHours(0,0,0,0);
 for(let d3=new Date(sd2);d3<=ed2;d3.setDate(d3.getDate()+1)){
 const ck=new Date(d3);ck.setHours(0,0,0,0);if(ck>td)continue;
@@ -588,7 +588,7 @@ const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
 const rc2=(()=>{if(!emp||pI2<0)return{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};
 const pd3=emp.pd||1;let sd2,ed2;
 if(pd3===1){sd2=new Date(pY2,pI2,1);ed2=new Date(pY2,pI2+1,0);}
-else{sd2=new Date(pY2,pI2-1,pd3);ed2=new Date(pY2,pI2,pd3-1);}
+else{sd2=new Date(pY2,pI2,pd3);ed2=new Date(pY2,pI2+1,pd3-1);}
 let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;const td=new Date();td.setHours(0,0,0,0);
 for(let d3=new Date(sd2);d3<=ed2;d3.setDate(d3.getDate()+1)){
 const ck=new Date(d3);ck.setHours(0,0,0,0);if(ck>td)continue;
@@ -625,7 +625,7 @@ Link</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v3.6";
+const APP_VER="v3.7";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
