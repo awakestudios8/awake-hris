@@ -517,22 +517,38 @@ return <div className="slip"><div className="slH"><img src={LR} alt="Awake"/><di
 const MNS=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const pIdx=MNS.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
 const pYr=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
-const now=new Date();
-let off=0;
+/* Calculate exact period based on slip month + pay_date */
+let sd,ed;
 if(pIdx>=0){
-const curM=now.getMonth();const curY=now.getFullYear();
-off=(curY*12+curM)-(pYr*12+pIdx);
-if(off<0)off=0;
-}
-const rc=pR_o(emp.id,emp.pd,off);
-return <div style={{background:"var(--bg)",borderRadius:14,padding:12,margin:"12px 0 4px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+const pd=emp.pd||1;
+if(pd===1){sd=new Date(pYr,pIdx,1);ed=new Date(pYr,pIdx+1,0);}
+else{sd=new Date(pYr,pIdx-1,pd);ed=new Date(pYr,pIdx,pd-1);}
+}else{sd=new Date();ed=new Date();}
+/* Calculate rekap for this exact period */
+const rc=(()=>{let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;
+const today=new Date();today.setHours(0,0,0,0);
+for(let dt2=new Date(sd);dt2<=ed;dt2.setDate(dt2.getDate()+1)){
+const chk=new Date(dt2);chk.setHours(0,0,0,0);if(chk>today)continue;
+const d=dt2.getDate();const w=dt2.getDay();const hol=isHoliday(chk);
+if(w===0||hol){const at=gA(emp.id,d,new Date(dt2));if(at.oh>0)ow=rj(ow+at.oh);continue;}
+const at=gA(emp.id,d,new Date(dt2));const sts=safeSt(at.st);
+if(sts==="Hadir"||sts==="Terlambat")h++;
+else if(sts==="Alpha")a++;
+else if(sts==="Sakit")sk++;
+else if(sts==="Izin")iz++;
+else if(sts==="Cuti")ct++;
+if(sts==="Terlambat")t++;
+if(at.oh>0)ol=rj(ol+at.oh);
+}return{h,t,a,ol,ow,iz,sk,ct};})();
+const prdLabel=(()=>{const pd2=emp.pd||1;if(pd2===1)return"1 - "+ed.getDate()+" "+MNS[pIdx]+" "+pYr;return sd.getDate()+" "+MNS[sd.getMonth()]+" - "+ed.getDate()+" "+MNS[ed.getMonth()]+" "+pYr;})();
+return <div style={{margin:"12px 0 4px"}}><div style={{fontSize:10,color:"var(--text2)",fontWeight:600,marginBottom:6,textAlign:"center"}}>Periode absen: {prdLabel}</div><div style={{background:"var(--bg)",borderRadius:14,padding:12,display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.h}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Hadir</div></div>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.sk}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Sakit</div></div>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.iz}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Izin</div></div>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.t}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Terlambat</div></div>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.a}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Alpha</div></div>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1,color:"var(--br)"}}>{fj(rj(rc.ol+rc.ow))}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Lembur</div></div>
-</div>;})()}
+</div></div>;})()}
 <div className="ssc">PENDAPATAN</div>
 {dt.it.filter(i=>i.t==="i").map((i,j)=><div key={j} className="sr"><span style={{color:"var(--text)"}}>{i.l}</span><span style={{fontWeight:700,color:"var(--text)"}}>{fm(i.a)}</span></div>)}
 {dt.it.some(i=>i.t==="d")&&<><div className="ssc">POTONGAN</div>{dt.it.filter(i=>i.t==="d").map((i,j)=><div key={j} className="sr"><span style={{color:"var(--text)"}}>{i.l}</span><span style={{color:"var(--br)",fontWeight:700}}>-{fm(i.a)}</span></div>)}</>}
@@ -540,7 +556,22 @@ return <div style={{background:"var(--bg)",borderRadius:14,padding:12,margin:"12
 {dt.nt&&<div style={{fontSize:12,color:"var(--text2)",marginTop:14,padding:"10px 14px",background:"var(--bg)",borderRadius:12,fontStyle:"italic"}}>&ldquo;{dt.nt}&rdquo;</div>}
 
 <div style={{display:"flex",gap:8,marginTop:16}}>
-<button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const MNS2=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];const pI2=MNS2.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);const now3=new Date();let off2=0;if(pI2>=0){off2=(now3.getFullYear()*12+now3.getMonth())-(pY2*12+pI2);if(off2<0)off2=0;}const rc2=emp?pR_o(emp.id,emp.pd,off2):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));const msg="📄 *Slip Gaji "+pr+"*\n\n"+
+<button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const MNS2=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const pI2=MNS2.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
+const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
+const rc2=(()=>{if(!emp||pI2<0)return{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};
+const pd3=emp.pd||1;let sd2,ed2;
+if(pd3===1){sd2=new Date(pY2,pI2,1);ed2=new Date(pY2,pI2+1,0);}
+else{sd2=new Date(pY2,pI2-1,pd3);ed2=new Date(pY2,pI2,pd3-1);}
+let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;const td=new Date();td.setHours(0,0,0,0);
+for(let d3=new Date(sd2);d3<=ed2;d3.setDate(d3.getDate()+1)){
+const ck=new Date(d3);ck.setHours(0,0,0,0);if(ck>td)continue;
+const dy=d3.getDate();const w=d3.getDay();const hl=isHoliday(ck);
+if(w===0||hl){const at2=gA(emp.id,dy,new Date(d3));if(at2.oh>0)ow=rj(ow+at2.oh);continue;}
+const at2=gA(emp.id,dy,new Date(d3));const st2=safeSt(at2.st);
+if(st2==="Hadir"||st2==="Terlambat")h++;else if(st2==="Alpha")a++;else if(st2==="Sakit")sk++;else if(st2==="Izin")iz++;
+if(st2==="Terlambat")t++;if(at2.oh>0)ol=rj(ol+at2.oh);
+}return{h,t,a,ol,ow,iz,sk,ct};})();const lbrJ=fj(rj(rc2.ol+rc2.ow));const msg="📄 *Slip Gaji "+pr+"*\n\n"+
 "👤 "+emp?.n+" — "+emp?.p+"\n"+
 "🏢 Awake Studios\n\n"+
 "📊 Rekap: "+rc2.h+" Hadir, "+rc2.sk+" Sakit, "+rc2.iz+" Izin, "+rc2.t+" Telat, "+lbrJ+" Lembur\n\n"+
@@ -553,7 +584,22 @@ window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.622-1.467A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
 WhatsApp</button>
 
-<button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const MNS2=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];const pI2=MNS2.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);const now3=new Date();let off2=0;if(pI2>=0){off2=(now3.getFullYear()*12+now3.getMonth())-(pY2*12+pI2);if(off2<0)off2=0;}const rc2=emp?pR_o(emp.id,emp.pd,off2):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));
+<button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const MNS2=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const pI2=MNS2.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
+const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
+const rc2=(()=>{if(!emp||pI2<0)return{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};
+const pd3=emp.pd||1;let sd2,ed2;
+if(pd3===1){sd2=new Date(pY2,pI2,1);ed2=new Date(pY2,pI2+1,0);}
+else{sd2=new Date(pY2,pI2-1,pd3);ed2=new Date(pY2,pI2,pd3-1);}
+let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;const td=new Date();td.setHours(0,0,0,0);
+for(let d3=new Date(sd2);d3<=ed2;d3.setDate(d3.getDate()+1)){
+const ck=new Date(d3);ck.setHours(0,0,0,0);if(ck>td)continue;
+const dy=d3.getDate();const w=d3.getDay();const hl=isHoliday(ck);
+if(w===0||hl){const at2=gA(emp.id,dy,new Date(d3));if(at2.oh>0)ow=rj(ow+at2.oh);continue;}
+const at2=gA(emp.id,dy,new Date(d3));const st2=safeSt(at2.st);
+if(st2==="Hadir"||st2==="Terlambat")h++;else if(st2==="Alpha")a++;else if(st2==="Sakit")sk++;else if(st2==="Izin")iz++;
+if(st2==="Terlambat")t++;if(at2.oh>0)ol=rj(ol+at2.oh);
+}return{h,t,a,ol,ow,iz,sk,ct};})();const lbrJ=fj(rj(rc2.ol+rc2.ow));
 const inc=(dt.it||[]).filter(x=>x.t==="i");const ded=(dt.it||[]).filter(x=>x.t==="d");
 const w=window.open("","_blank");
 w.document.write("<html><head><title>Slip_"+emp?.n+"_"+pr+"</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,-apple-system,sans-serif}body{padding:40px;max-width:500px;margin:0 auto}.hdr{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #eee}.title{font-size:14px;font-weight:800}.sub{font-size:10px;color:#666;margin-top:4px;text-transform:uppercase;letter-spacing:1px}.info{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #f0f0f0}.info strong{font-weight:700}.rekap{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:12px 0;padding:10px;background:#f5f3ec;border-radius:8px}.rk{text-align:center}.rk-v{font-size:14px;font-weight:800}.rk-l{font-size:8px;color:#666}.sc{font-size:9px;font-weight:800;color:#AF1917;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px;padding-top:10px;border-top:2px solid #f5f3ec}.sc:first-of-type{border:none;padding:0;margin-top:8px}.row{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #f5f3ec}.row:last-child{border-bottom:none}.total{background:linear-gradient(135deg,#AF1917,#6b0f0e);color:#fff;padding:12px 14px;border-radius:10px;margin-top:12px;display:flex;justify-content:space-between;font-weight:800;font-size:14px}.foot{text-align:center;font-size:9px;color:#999;margin-top:20px}</style></head><body>"+
@@ -581,7 +627,7 @@ Link</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v3.4";
+const APP_VER="v3.5";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
