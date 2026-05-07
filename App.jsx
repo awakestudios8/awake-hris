@@ -581,7 +581,7 @@ const inc3=dt.it?.filter(x=>x.t==="i")||[];const ded3=dt.it?.filter(x=>x.t==="d"
 const pd5=emp.pd||1;
 const prdL3=(()=>{if(pI3<0)return pr;if(pd5===1)return"1 - "+(new Date(pY3,pI3+1,0).getDate())+" "+MNS3[pI3]+" "+pY3;const s3=new Date(pY3,pI3,pd5);const e3=new Date(pY3,pI3+1,pd5-1);return s3.getDate()+" "+MNS3[s3.getMonth()]+" - "+e3.getDate()+" "+MNS3[e3.getMonth()]+" "+pY3;})();
 const el=document.createElement("div");
-el.style.cssText="position:absolute;left:0;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;z-index:9999;opacity:0.01;";
+el.style.cssText="position:fixed;left:0;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;z-index:-1;pointer-events:none;";
 var h2c="";
 h2c+="<div style='text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:2px solid #f5f3ec'>";
 h2c+="<div style='width:80px;height:48px;background:#AF1917;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px'><img src='"+LW+"' style='height:32px' alt=''/></div>";
@@ -623,7 +623,7 @@ Share</button>
 const btn2=event.currentTarget;btn2.disabled=true;btn2.textContent="Membuat...";
 try{
 const el2=document.createElement("div");
-el2.style.cssText="position:absolute;left:0;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;z-index:9999;opacity:0.01;";
+el2.style.cssText="position:fixed;left:0;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;z-index:-1;pointer-events:none;";
 const MNS4=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const pI4=MNS4.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
 const pY4=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
@@ -679,7 +679,7 @@ Download</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v4.1";
+const APP_VER="v4.2";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
