@@ -470,7 +470,11 @@ sSavMsg("Menyimpan...");
 const saveVal=typeof status==="object"?JSON.stringify(status):status;
 fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,status:saveVal})}).then(async r=>{if(!r.ok){const t=await r.text();sSavMsg("GAGAL: "+r.status+" - "+t);console.error("Save FAILED:",r.status,t);}else{sSavMsg("Tersimpan ✓");setTimeout(()=>sSavMsg(""),2000);}}).catch(e=>{sSavMsg("Error koneksi");console.error("Save error:",e);});};
 
-const svSl=(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));fetch(SUPA+"/rest/v1/payslips?on_conflict=employee_id,period",{method:"POST",headers:{...SH,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})}).catch(e=>console.error("Slip save err:",e));};
+const svSl=async(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));
+try{
+await fetch(SUPA+"/rest/v1/payslips?employee_id=eq."+encodeURIComponent(ei)+"&period=eq."+encodeURIComponent(pr),{method:"DELETE",headers:SH});
+await fetch(SUPA+"/rest/v1/payslips",{method:"POST",headers:SH,body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})});
+}catch(e){console.error("Slip save err:",e);}};
 const eSP=ei=>Object.keys(sl[ei]||{}).sort().reverse();
 
 if(ld)return <><style>{css}</style><div className="abg"><div style={{textAlign:"center",color:"#fff",position:"relative",zIndex:2}}><div style={{width:64,height:64,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center"}}><img src={LW} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/></div><div style={{fontSize:20,fontWeight:800,marginBottom:4,letterSpacing:"-0.5px"}}>Awake HRIS</div><div style={{fontSize:12,opacity:0.8,fontWeight:500}}>Menghubungkan ke database...</div></div></div></>;
@@ -577,7 +581,7 @@ Link</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v3.2";
+const APP_VER="v3.3";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
@@ -687,9 +691,21 @@ return <tr key={dt.toISOString()} style={(we||hol)?{background:"#fdf2f2"}:{}}><t
 
 const APay=()=>{const sel=sls||em[0]?.id;const pds=eSP(sel);
 return <><div className="cd"><div className="ch"><span className="ct">Slip Gaji</span><select className="inp" style={{fontWeight:600,width:"auto",maxWidth:200}} value={sel} onChange={e=>sSls(e.target.value)}>{em.map(e=><option key={e.id} value={e.id}>{e.n}</option>)}</select></div>
-{!sns?<button className="btn" onClick={()=>{sSns(true);sSnp(MN[new Date().getMonth()]+" "+new Date().getFullYear());}}><Plus size={14}/>Buat Slip Baru</button>:<div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}><select className="inp" value={snp} onChange={e=>sSnp(e.target.value)} style={{width:220}}>
-{(()=>{const opts=[];const now2=new Date();for(let i=0;i<12;i++){const d=new Date(now2.getFullYear(),now2.getMonth()-i,1);opts.push(MN[d.getMonth()]+" "+d.getFullYear());}return opts.map(o=><option key={o} value={o}>{o}</option>);})()}
-</select><button className="btn bs" onClick={()=>{if(snp){sEk({e:sel,p:snp});editingRef.current=true;sSns(false);}}}>Buat</button><button className="btn bo bs" onClick={()=>sSns(false)}>Batal</button></div>}
+{!sns?<button className="btn" style={{background:"var(--br)",color:"#fff"}} onClick={()=>sSns(true)}><Plus size={14}/>Buat Slip Baru</button>:
+<div style={{background:"var(--bg)",borderRadius:14,padding:16,marginBottom:12}}>
+<div style={{fontSize:14,fontWeight:800,marginBottom:10}}>Pilih Periode Slip Gaji</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
+{(()=>{const now2=new Date();return Array.from({length:6},(_,i)=>{const d=new Date(now2.getFullYear(),now2.getMonth()-i,1);const lbl=MN[d.getMonth()]+" "+d.getFullYear();const exists=sl[sel]?.[lbl];return <button key={lbl} style={{padding:"12px 8px",borderRadius:10,border:snp===lbl?"2px solid var(--br)":"1.5px solid var(--brd)",background:snp===lbl?"#fdf2f2":"#fff",cursor:"pointer",fontFamily:"inherit",textAlign:"center",position:"relative"}} onClick={()=>sSnp(lbl)}>
+<div style={{fontSize:13,fontWeight:700,color:snp===lbl?"var(--br)":"var(--text)"}}>{MN[d.getMonth()]}</div>
+<div style={{fontSize:10,color:"var(--text2)"}}>{d.getFullYear()}</div>
+{exists&&<div style={{fontSize:8,fontWeight:700,color:"#16a34a",marginTop:2}}>Sudah ada</div>}
+</button>;});})()}
+</div>
+<div style={{display:"flex",gap:8}}>
+<button className="btn" style={{flex:1,background:snp?"var(--br)":"var(--brd)",color:snp?"#fff":"var(--text2)",fontSize:13}} disabled={!snp} onClick={()=>{if(snp){const exists=sl[sel]?.[snp];if(exists){sEk({e:sel,p:snp});editingRef.current=true;}else{sEk({e:sel,p:snp});editingRef.current=true;}sSns(false);}}}>{sl[sel]?.[snp]?"Edit Slip "+snp:"Buat Slip "+snp}</button>
+<button className="btn bo" style={{fontSize:13}} onClick={()=>{sSns(false);sSnp("");}}>Batal</button>
+</div>
+</div>}
 </div>
 {ek?.e===sel&&<SlipEd ei={sel} pr={ek.p} ex={sl[sel]?.[ek.p]} onSv={(it,nt)=>{editingRef.current=false;svSl(sel,ek.p,it,nt);sEk(null);}} onCn={()=>{sEk(null);editingRef.current=false;}}/>}
 {pds.filter(p=>!(ek?.e===sel&&ek?.p===p)).map(p=><SlipVw key={p} ei={sel} pr={p} dt={sl[sel][p]} adm={true} onEd={()=>sEk({e:sel,p})} onDl={()=>{sSl(prev=>{const n={...prev};if(n[sel]){const c={...n[sel]};delete c[p];n[sel]=c;}return n;});}}/>)}
