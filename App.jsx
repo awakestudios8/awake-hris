@@ -358,7 +358,7 @@ const[chpw,sChpw]=useState({o:"",n:"",c:""});
 const[saldoHidden,sSaldoHidden]=useState(true);
 const[fabOpen,sFabOpen]=useState(false);
 const[refreshing,sRefreshing]=useState(false);
-const[editing,sEditing]=useState(false);
+const editingRef=React.useRef(false);
 const[selPr,sSelPr]=useState("");
 const[perOff,sPerOff]=useState(0);
 const[admPerOff,sAdmPerOff]=useState(0);
@@ -399,11 +399,11 @@ if(res){const{emps,accs}=res;try{const ss=sessionStorage.getItem("hris_session")
 sLd(false);
 })();
 /* Auto-refresh on tab focus */
-const onFocus=()=>{if(document.visibilityState==="visible"&&!ld&&!editing){loadAllData(false);}};
+const onFocus=()=>{if(document.visibilityState==="visible"&&!ld&&!editingRef.current){loadAllData(false);}};
 document.addEventListener("visibilitychange",onFocus);
 window.addEventListener("focus",onFocus);
 /* Polling every 30 seconds when tab is active */
-const poll=setInterval(()=>{if(document.visibilityState==="visible"&&!editing){loadAllData(false);}},60000);
+const poll=setInterval(()=>{if(document.visibilityState==="visible"&&!editingRef.current){loadAllData(false);}},60000);
 return()=>{document.removeEventListener("visibilitychange",onFocus);window.removeEventListener("focus",onFocus);clearInterval(poll);};
 },[]);
 
@@ -518,7 +518,7 @@ return <div className="slip"><div className="slH"><img src={LR} alt="Awake"/><di
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v2.6";
+const APP_VER="v2.7";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
@@ -628,9 +628,9 @@ return <tr key={dt.toISOString()} style={(we||hol)?{background:"#fdf2f2"}:{}}><t
 
 const APay=()=>{const sel=sls||em[0]?.id;const pds=eSP(sel);
 return <><div className="cd"><div className="ch"><span className="ct">Slip Gaji</span><select className="inp" style={{fontWeight:600,width:"auto",maxWidth:200}} value={sel} onChange={e=>sSls(e.target.value)}>{em.map(e=><option key={e.id} value={e.id}>{e.n}</option>)}</select></div>
-{!sns?<button className="btn" onClick={()=>{sSns(true);sSnp("April 2026");}}><Plus size={14}/>Buat Slip Baru</button>:<div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}><input className="inp" value={snp} onChange={e=>sSnp(e.target.value)} placeholder="April 2026" style={{width:220}}/><button className="btn bs" onClick={()=>{if(snp){sEk({e:sel,p:snp});sEditing(true);sSns(false);}}}>Buat</button><button className="btn bo bs" onClick={()=>sSns(false)}>Batal</button></div>}
+{!sns?<button className="btn" onClick={()=>{sSns(true);sSnp("April 2026");}}><Plus size={14}/>Buat Slip Baru</button>:<div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}><input className="inp" value={snp} onChange={e=>sSnp(e.target.value)} placeholder="April 2026" style={{width:220}}/><button className="btn bs" onClick={()=>{if(snp){sEk({e:sel,p:snp});editingRef.current=true;sSns(false);}}}>Buat</button><button className="btn bo bs" onClick={()=>sSns(false)}>Batal</button></div>}
 </div>
-{ek?.e===sel&&<SlipEd ei={sel} pr={ek.p} ex={sl[sel]?.[ek.p]} onSv={(it,nt)=>{svSl(sel,ek.p,it,nt);sEk(null);}} onCn={()=>{sEk(null);sEditing(false);}}/>}
+{ek?.e===sel&&<SlipEd ei={sel} pr={ek.p} ex={sl[sel]?.[ek.p]} onSv={(it,nt)=>{editingRef.current=false;svSl(sel,ek.p,it,nt);sEk(null);}} onCn={()=>{sEk(null);editingRef.current=false;}}/>}
 {pds.filter(p=>!(ek?.e===sel&&ek?.p===p)).map(p=><SlipVw key={p} ei={sel} pr={p} dt={sl[sel][p]} adm={true} onEd={()=>sEk({e:sel,p})} onDl={()=>{sSl(prev=>{const n={...prev};if(n[sel]){const c={...n[sel]};delete c[p];n[sel]=c;}return n;});}}/>)}
 {pds.length===0&&!ek&&<div className="cd" style={{textAlign:"center",color:"#94a3b8",padding:32}}>Belum ada slip gaji.</div>}</>;};
 
