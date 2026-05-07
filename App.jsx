@@ -359,6 +359,8 @@ const[saldoHidden,sSaldoHidden]=useState(true);
 const[fabOpen,sFabOpen]=useState(false);
 const[refreshing,sRefreshing]=useState(false);
 const editingRef=React.useRef(false);
+const[batchLbr,sBatchLbr]=useState({tgl:"",ket:"",sel:{},jams:{}});
+const[batchMode,sBatchMode]=useState(false);
 const[selPr,sSelPr]=useState("");
 const[perOff,sPerOff]=useState(0);
 const[admPerOff,sAdmPerOff]=useState(0);
@@ -507,18 +509,63 @@ const SlipVw=({ei,pr,dt,adm,onEd,onDl})=>{const emp=em.find(e=>e.id===ei);const 
 return <div className="slip"><div className="slH"><img src={LR} alt="Awake"/><div className="slH-t">Awake Studios</div><div className="slH-p">SLIP GAJI · {pr}</div></div>
 <div className="sr"><span style={{color:"var(--text2)"}}>Nama</span><strong>{emp?.n}</strong></div>
 <div className="sr"><span style={{color:"var(--text2)"}}>Jabatan</span><span style={{fontWeight:600}}>{emp?.p||"-"}</span></div>
+{emp&&(()=>{const rc=pR(emp.id,emp.pd);return <div style={{background:"var(--bg)",borderRadius:14,padding:12,margin:"12px 0 4px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+<div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.h}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Hadir</div></div>
+<div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.sk}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Sakit</div></div>
+<div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.iz}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Izin</div></div>
+<div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.t}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Terlambat</div></div>
+<div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.a}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Alpha</div></div>
+<div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1,color:"var(--br)"}}>{fj(rj(rc.ol+rc.ow))}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Lembur</div></div>
+</div>;})()}
 <div className="ssc">PENDAPATAN</div>
 {dt.it.filter(i=>i.t==="i").map((i,j)=><div key={j} className="sr"><span style={{color:"var(--text)"}}>{i.l}</span><span style={{fontWeight:700,color:"var(--text)"}}>{fm(i.a)}</span></div>)}
 {dt.it.some(i=>i.t==="d")&&<><div className="ssc">POTONGAN</div>{dt.it.filter(i=>i.t==="d").map((i,j)=><div key={j} className="sr"><span style={{color:"var(--text)"}}>{i.l}</span><span style={{color:"var(--br)",fontWeight:700}}>-{fm(i.a)}</span></div>)}</>}
 <div className="sr srt"><span>TOTAL DITERIMA</span><span>{fm(tot.n)}</span></div>
 {dt.nt&&<div style={{fontSize:12,color:"var(--text2)",marginTop:14,padding:"10px 14px",background:"var(--bg)",borderRadius:12,fontStyle:"italic"}}>&ldquo;{dt.nt}&rdquo;</div>}
+
+<div style={{display:"flex",gap:8,marginTop:16}}>
+<button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const rc2=emp?pR(emp.id,emp.pd):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));const msg="📄 *Slip Gaji "+pr+"*\n\n"+
+"👤 "+emp?.n+" — "+emp?.p+"\n"+
+"🏢 Awake Studios\n\n"+
+"📊 Rekap: "+rc2.h+" Hadir, "+rc2.sk+" Sakit, "+rc2.iz+" Izin, "+rc2.t+" Telat, "+lbrJ+" Lembur\n\n"+
+(dt.it||[]).filter(x=>x.t==="i").map(x=>"➕ "+x.l+": "+fm(x.a)).join("\n")+"\n"+
+(dt.it||[]).filter(x=>x.t==="d").map(x=>"➖ "+x.l+": -"+fm(x.a)).join("\n")+"\n\n"+
+"💰 *TOTAL: "+fm(tot.n)+"*\n\n"+
+"🔗 Detail: "+window.location.origin;
+window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.622-1.467A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+WhatsApp</button>
+
+<button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const rc2=emp?pR(emp.id,emp.pd):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));
+const inc=(dt.it||[]).filter(x=>x.t==="i");const ded=(dt.it||[]).filter(x=>x.t==="d");
+const w=window.open("","_blank");
+w.document.write("<html><head><title>Slip_"+emp?.n+"_"+pr+"</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,-apple-system,sans-serif}body{padding:40px;max-width:500px;margin:0 auto}.hdr{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #eee}.title{font-size:14px;font-weight:800}.sub{font-size:10px;color:#666;margin-top:4px;text-transform:uppercase;letter-spacing:1px}.info{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #f0f0f0}.info strong{font-weight:700}.rekap{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:12px 0;padding:10px;background:#f5f3ec;border-radius:8px}.rk{text-align:center}.rk-v{font-size:14px;font-weight:800}.rk-l{font-size:8px;color:#666}.sc{font-size:9px;font-weight:800;color:#AF1917;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px;padding-top:10px;border-top:2px solid #f5f3ec}.sc:first-of-type{border:none;padding:0;margin-top:8px}.row{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #f5f3ec}.row:last-child{border-bottom:none}.total{background:linear-gradient(135deg,#AF1917,#6b0f0e);color:#fff;padding:12px 14px;border-radius:10px;margin-top:12px;display:flex;justify-content:space-between;font-weight:800;font-size:14px}.foot{text-align:center;font-size:9px;color:#999;margin-top:20px}</style></head><body>"+
+"<div class='hdr'><div class='title'>Awake Studios</div><div class='sub'>Slip Gaji · "+pr+"</div></div>"+
+"<div class='info'><span style='color:#666'>Nama</span><strong>"+emp?.n+"</strong></div>"+
+"<div class='info'><span style='color:#666'>Jabatan</span><span style='font-weight:600'>"+(emp?.p||"-")+"</span></div>"+
+"<div class='rekap'><div class='rk'><div class='rk-v'>"+rc2.h+"</div><div class='rk-l'>Hadir</div></div><div class='rk'><div class='rk-v'>"+rc2.sk+"</div><div class='rk-l'>Sakit</div></div><div class='rk'><div class='rk-v'>"+rc2.iz+"</div><div class='rk-l'>Izin</div></div><div class='rk'><div class='rk-v'>"+rc2.t+"</div><div class='rk-l'>Telat</div></div><div class='rk'><div class='rk-v'>"+rc2.a+"</div><div class='rk-l'>Alpha</div></div><div class='rk'><div class='rk-v' style='color:#AF1917'>"+lbrJ+"</div><div class='rk-l'>Lembur</div></div></div>"+
+"<div class='sc'>Pendapatan</div>"+inc.map(x=>"<div class='row'><span>"+x.l+"</span><span style='font-weight:700'>"+fm(x.a)+"</span></div>").join("")+
+(ded.length?"<div class='sc'>Potongan</div>"+ded.map(x=>"<div class='row'><span>"+x.l+"</span><span style='font-weight:700;color:#AF1917'>-"+fm(x.a)+"</span></div>").join(""):"")+
+"<div class='total'><span>TOTAL DITERIMA</span><span>"+fm(tot.n)+"</span></div>"+
+(dt.nt?"<div style='margin-top:12px;padding:8px 12px;background:#f5f3ec;border-radius:8px;font-size:10px;color:#666;font-style:italic'>"+dt.nt+"</div>":"")+
+"<div class='foot'>Dicetak dari Awake HRIS · "+new Date().toLocaleDateString("id-ID")+"</div>"+
+"</body></html>");w.document.close();setTimeout(()=>w.print(),500);
+}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+PDF / Print</button>
+
+<button className="btn" style={{flex:1,background:"#fff",color:"var(--text)",border:"1px solid var(--brd)",fontSize:11,padding:"10px 8px"}} onClick={()=>{navigator.clipboard.writeText(window.location.origin).then(()=>alert("Link disalin!")).catch(()=>alert(window.location.origin));}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+Link</button>
+</div>
 {adm&&<div style={{display:"flex",gap:6,marginTop:10}}><button className="btn bo bs" onClick={onEd}><Edit3 size={12}/>Edit</button><button className="btn bd bs" onClick={onDl}><Trash2 size={12}/>Hapus</button></div>}
 </div>;};
 
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v2.8";
+const APP_VER="v3.0";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
@@ -650,7 +697,7 @@ return isE?<tr key={s.id} style={{background:"#f8f9fb"}}><td style={{fontWeight:
 const ALbr=()=>{
 const lbrEmp=(ei)=>lbr.filter(l=>l.ei===ei);
 const lbrTotal=(ei)=>rj(lbr.filter(l=>l.ei===ei).reduce((a,l)=>a+l.jam,0));
-return <div className="cd"><div className="ch"><span className="ct">Input Lembur</span><button className="btn" onClick={()=>sShowLbr(!showLbr)}>{showLbr?"Batal":<><Plus size={14}/>Input Lembur</>}</button></div>
+return <div className="cd"><div className="ch"><span className="ct">Input Lembur</span><div style={{display:"flex",gap:6}}><button className="btn bo" style={{fontSize:12}} onClick={()=>{sBatchMode(!batchMode);sShowLbr(false);}}>{batchMode?"Batal":<><Users size={14}/>Masal</>}</button><button className="btn" style={{background:"var(--br)",color:"#fff",fontSize:12}} onClick={()=>{sShowLbr(!showLbr);sBatchMode(false);}}>{showLbr?"Batal":<><Plus size={14}/>Satuan</>}</button></div></div>
 <div style={{fontSize:12,color:"#64748b",marginBottom:12,padding:"10px 14px",background:"#fefce8",borderRadius:10,lineHeight:1.8}}>
 Lembur hanya dihitung jika ada perintah dari atasan. Admin input manual di sini.<br/>
 Potongan istirahat: lembur &gt;2 jam dipotong 30 menit, &gt;4 jam dipotong 60 menit.
