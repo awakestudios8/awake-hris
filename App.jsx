@@ -470,7 +470,7 @@ sSavMsg("Menyimpan...");
 const saveVal=typeof status==="object"?JSON.stringify(status):status;
 fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:ei,date:dateStr,status:saveVal})}).then(async r=>{if(!r.ok){const t=await r.text();sSavMsg("GAGAL: "+r.status+" - "+t);console.error("Save FAILED:",r.status,t);}else{sSavMsg("Tersimpan ✓");setTimeout(()=>sSavMsg(""),2000);}}).catch(e=>{sSavMsg("Error koneksi");console.error("Save error:",e);});};
 
-const svSl=(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));fetch(SUPA+"/rest/v1/payslips",{method:"POST",headers:{...SH,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})});};
+const svSl=(ei,pr,it,nt)=>{sSl(p=>({...p,[ei]:{...(p[ei]||{}),[pr]:{it,nt}}}));fetch(SUPA+"/rest/v1/payslips?on_conflict=employee_id,period",{method:"POST",headers:{...SH,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify({employee_id:ei,period:pr,items:it,notes:nt})}).catch(e=>console.error("Slip save err:",e));};
 const eSP=ei=>Object.keys(sl[ei]||{}).sort().reverse();
 
 if(ld)return <><style>{css}</style><div className="abg"><div style={{textAlign:"center",color:"#fff",position:"relative",zIndex:2}}><div style={{width:64,height:64,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center"}}><img src={LW} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/></div><div style={{fontSize:20,fontWeight:800,marginBottom:4,letterSpacing:"-0.5px"}}>Awake HRIS</div><div style={{fontSize:12,opacity:0.8,fontWeight:500}}>Menghubungkan ke database...</div></div></div></>;
@@ -577,7 +577,7 @@ Link</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v3.1";
+const APP_VER="v3.2";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
