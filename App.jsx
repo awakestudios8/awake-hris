@@ -554,46 +554,9 @@ return <div style={{margin:"12px 0 4px"}}><div style={{fontSize:10,color:"var(--
 {dt.nt&&<div style={{fontSize:12,color:"var(--text2)",marginTop:14,padding:"10px 14px",background:"var(--bg)",borderRadius:12,fontStyle:"italic"}}>&ldquo;{dt.nt}&rdquo;</div>}
 
 <div style={{display:"flex",gap:8,marginTop:16}}>
-<button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const inc2=dt.it?.filter(x=>x.t==="i")||[];const ded2=dt.it?.filter(x=>x.t==="d")||[];
-const MNS2=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-const pI2=MNS2.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
-const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
-const rc2=(()=>{if(!emp||pI2<0)return{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};
-const pd3=emp.pd||1;let sd2,ed2;
-if(pd3===1){sd2=new Date(pY2,pI2,1);ed2=new Date(pY2,pI2+1,0);}
-else{sd2=new Date(pY2,pI2,pd3);ed2=new Date(pY2,pI2+1,pd3-1);}
-let h=0,t=0,a=0,ol=0,ow=0,iz=0,sk=0,ct=0;const td=new Date();td.setHours(0,0,0,0);
-for(let d3=new Date(sd2);d3<=ed2;d3.setDate(d3.getDate()+1)){
-const ck=new Date(d3);ck.setHours(0,0,0,0);if(ck>td)continue;
-const dy=d3.getDate();const w=d3.getDay();const hl=isHoliday(ck);
-if(w===0||hl){const at2=gA(emp.id,dy,new Date(d3));if(at2.oh>0)ow=rj(ow+at2.oh);continue;}
-const at2=gA(emp.id,dy,new Date(d3));const st2=safeSt(at2.st);
-if(st2==="Hadir"||st2==="Terlambat")h++;else if(st2==="Alpha")a++;else if(st2==="Sakit")sk++;else if(st2==="Izin")iz++;
-if(st2==="Terlambat")t++;if(at2.oh>0)ol=rj(ol+at2.oh);
-}return{h,t,a,ol,ow,iz,sk,ct};})();
-const lbrJ=fj(rj(rc2.ol+rc2.ow));
-const lines=["*SLIP GAJI "+pr.toUpperCase()+"*","Awake Studios",""];
-lines.push("Nama: *"+emp?.n+"*");
-lines.push("Jabatan: "+(emp?.p||"-"));
-lines.push("");
-lines.push("_Rekap Kehadiran:_");
-lines.push("Hadir: "+rc2.h+" | Sakit: "+rc2.sk+" | Izin: "+rc2.iz);
-lines.push("Telat: "+rc2.t+" | Lembur: "+lbrJ);
-lines.push("");
-lines.push("_Pendapatan:_");
-inc2.forEach(x=>lines.push("+ "+x.l+": "+fm(x.a)));
-if(ded2.length){lines.push("");lines.push("_Potongan:_");ded2.forEach(x=>lines.push("- "+x.l+": "+fm(x.a)));}
-lines.push("");
-lines.push("*TOTAL: "+fm(tot.n)+"*");
-lines.push("");
-lines.push("Detail: "+window.location.origin);
-const msg=lines.join("\n");
-window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
-}}>
-<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.622-1.467A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
-WhatsApp</button>
-
-<button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={async()=>{
+<button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={async()=>{
+const btn=event.currentTarget;btn.disabled=true;btn.textContent="Membuat...";
+try{
 const MNS3=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const pI3=MNS3.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
 const pY3=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
@@ -614,24 +577,19 @@ const lbr3=fj(rj(rc3.ol+rc3.ow));
 const inc3=dt.it?.filter(x=>x.t==="i")||[];const ded3=dt.it?.filter(x=>x.t==="d")||[];
 const pd5=emp.pd||1;
 const prdL3=(()=>{if(pI3<0)return pr;if(pd5===1)return"1 - "+(new Date(pY3,pI3+1,0).getDate())+" "+MNS3[pI3]+" "+pY3;const s3=new Date(pY3,pI3,pd5);const e3=new Date(pY3,pI3+1,pd5-1);return s3.getDate()+" "+MNS3[s3.getMonth()]+" - "+e3.getDate()+" "+MNS3[e3.getMonth()]+" "+pY3;})();
-/* Create hidden div for PDF rendering */
 const el=document.createElement("div");
 el.style.cssText="position:fixed;left:-9999px;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;";
 var h2c="";
 h2c+="<div style='text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:2px solid #f5f3ec'>";
 h2c+="<div style='width:80px;height:48px;background:#AF1917;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px'><img src='"+LW+"' style='height:32px' alt=''/></div>";
-h2c+="<div style='font-size:16px;font-weight:800;letter-spacing:-0.3px'>Awake Studios</div>";
+h2c+="<div style='font-size:16px;font-weight:800'>Awake Studios</div>";
 h2c+="<div style='font-size:11px;color:#64748b;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:4px'>Slip Gaji · "+pr+"</div></div>";
 h2c+="<div style='display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid #f0f0f0'><span style='color:#64748b'>Nama</span><strong>"+(emp?.n||"")+"</strong></div>";
 h2c+="<div style='display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid #f0f0f0'><span style='color:#64748b'>Jabatan</span><span style='font-weight:600'>"+(emp?.p||"-")+"</span></div>";
 h2c+="<div style='font-size:10px;color:#64748b;text-align:center;margin:14px 0 6px;font-weight:600'>Periode absen: "+prdL3+"</div>";
 h2c+="<div style='display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:16px;padding:12px;background:#f5f3ec;border-radius:10px'>";
-h2c+="<div style='text-align:center'><div style='font-size:16px;font-weight:800'>"+rc3.h+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>Hadir</div></div>";
-h2c+="<div style='text-align:center'><div style='font-size:16px;font-weight:800'>"+rc3.sk+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>Sakit</div></div>";
-h2c+="<div style='text-align:center'><div style='font-size:16px;font-weight:800'>"+rc3.iz+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>Izin</div></div>";
-h2c+="<div style='text-align:center'><div style='font-size:16px;font-weight:800'>"+rc3.t+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>Telat</div></div>";
-h2c+="<div style='text-align:center'><div style='font-size:16px;font-weight:800'>"+rc3.a+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>Alpha</div></div>";
-h2c+="<div style='text-align:center'><div style='font-size:16px;font-weight:800;color:#AF1917'>"+lbr3+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>Lembur</div></div></div>";
+[[""+rc3.h,"Hadir"],[""+rc3.sk,"Sakit"],[""+rc3.iz,"Izin"],[""+rc3.t,"Telat"],[""+rc3.a,"Alpha"],[lbr3,"Lembur"]].forEach(function(r){h2c+="<div style='text-align:center'><div style='font-size:16px;font-weight:800"+(r[1]==="Lembur"?";color:#AF1917":"")+"'>"+r[0]+"</div><div style='font-size:8px;color:#64748b;font-weight:600'>"+r[1]+"</div></div>";});
+h2c+="</div>";
 h2c+="<div style='font-size:10px;font-weight:800;color:#AF1917;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px'>Pendapatan</div>";
 inc3.forEach(function(x){h2c+="<div style='display:flex;justify-content:space-between;padding:7px 0;font-size:12px;border-bottom:1px solid #f5f3ec'><span>"+x.l+"</span><span style='font-weight:700'>"+fm(x.a)+"</span></div>";});
 if(ded3.length){h2c+="<div style='font-size:10px;font-weight:800;color:#AF1917;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;padding-top:10px;border-top:2px solid #f5f3ec'>Potongan</div>";
@@ -641,20 +599,39 @@ if(dt.nt)h2c+="<div style='margin-top:14px;padding:10px 14px;background:#f5f3ec;
 h2c+="<div style='text-align:center;font-size:9px;color:#bbb;margin-top:20px;padding-top:14px;border-top:1px solid #f0f0f0'>Dicetak dari Awake HRIS · "+new Date().toLocaleDateString("id-ID")+"</div>";
 el.innerHTML=h2c;
 document.body.appendChild(el);
-try{
 const canvas=await window.html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#ffffff"});
-const imgData=canvas.toDataURL("image/png");
-const pdf=new window.jspdf.jsPDF({unit:"px",format:[canvas.width/2,canvas.height/2]});
-pdf.addImage(imgData,"PNG",0,0,canvas.width/2,canvas.height/2);
-pdf.save("Slip_"+(emp?.n||"")+"_"+pr.replace(/\s/g,"_")+".pdf");
-}catch(e){console.error("PDF err:",e);alert("Gagal buat PDF, coba refresh halaman dulu");}
-document.body.removeChild(el);}}>
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
-PDF</button>
+document.body.removeChild(el);
+const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
+const fileName="Slip_"+(emp?.n||"")+"_"+pr.replace(/\s/g,"_")+".png";
+const file=new File([blob],fileName,{type:"image/png"});
+if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+await navigator.share({title:"Slip Gaji "+pr+" - "+(emp?.n||""),text:"Slip Gaji "+(emp?.n||"")+" "+pr+" - Awake Studios",files:[file]});
+}else{
+const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=fileName;a.click();URL.revokeObjectURL(url);
+alert("File tersimpan. Kirim manual via WhatsApp.");
+}
+}catch(e){console.error("Share err:",e);alert("Gagal: "+e.message);}
+btn.disabled=false;btn.innerHTML="<svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8\'/><polyline points=\'16 6 12 2 8 6\'/><line x1=\'12\' y1=\'2\' x2=\'12\' y2=\'15\'/></svg> Share";
+}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+Share</button>
 
-<button className="btn" style={{flex:1,background:"#fff",color:"var(--text)",border:"1px solid var(--brd)",fontSize:11,padding:"10px 8px"}} onClick={()=>{navigator.clipboard.writeText(window.location.origin).then(()=>alert("Link disalin!")).catch(()=>alert(window.location.origin));}}>
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-Link</button>
+<button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={async()=>{
+const btn2=event.currentTarget;btn2.disabled=true;btn2.textContent="Membuat...";
+try{
+const el2=document.createElement("div");
+el2.style.cssText="position:fixed;left:-9999px;top:0;width:460px;padding:40px 36px;background:#fff;font-family:Inter,-apple-system,sans-serif;color:#0f0f0f;";
+el2.innerHTML=document.querySelector(".slip")?.innerHTML||"";
+document.body.appendChild(el2);
+const canvas2=await window.html2canvas(el2,{scale:2,useCORS:true,backgroundColor:"#ffffff"});
+document.body.removeChild(el2);
+const blob2=await new Promise(r=>canvas2.toBlob(r,"image/png"));
+const url2=URL.createObjectURL(blob2);const a2=document.createElement("a");a2.href=url2;a2.download="Slip_"+(emp?.n||"")+"_"+pr.replace(/\s/g,"_")+".png";a2.click();URL.revokeObjectURL(url2);
+}catch(e){console.error("DL err:",e);}
+btn2.disabled=false;btn2.textContent="Download";
+}}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+Download</button>
 </div>
 {adm&&<div style={{display:"flex",gap:6,marginTop:10}}><button className="btn bo bs" onClick={onEd}><Edit3 size={12}/>Edit</button><button className="btn bd bs" onClick={onDl}><Trash2 size={12}/>Hapus</button></div>}
 </div>;};
@@ -662,7 +639,7 @@ Link</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v3.9";
+const APP_VER="v4.0";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
