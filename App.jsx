@@ -509,7 +509,19 @@ const SlipVw=({ei,pr,dt,adm,onEd,onDl})=>{const emp=em.find(e=>e.id===ei);const 
 return <div className="slip"><div className="slH"><img src={LR} alt="Awake"/><div className="slH-t">Awake Studios</div><div className="slH-p">SLIP GAJI · {pr}</div></div>
 <div className="sr"><span style={{color:"var(--text2)"}}>Nama</span><strong>{emp?.n}</strong></div>
 <div className="sr"><span style={{color:"var(--text2)"}}>Jabatan</span><span style={{fontWeight:600}}>{emp?.p||"-"}</span></div>
-{emp&&(()=>{const rc=pR(emp.id,emp.pd);return <div style={{background:"var(--bg)",borderRadius:14,padding:12,margin:"12px 0 4px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+{emp&&(()=>{
+const MNS=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const pIdx=MNS.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
+const pYr=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
+const now=new Date();
+let off=0;
+if(pIdx>=0){
+const curM=now.getMonth();const curY=now.getFullYear();
+off=(curY*12+curM)-(pYr*12+pIdx);
+if(off<0)off=0;
+}
+const rc=pR_o(emp.id,emp.pd,off);
+return <div style={{background:"var(--bg)",borderRadius:14,padding:12,margin:"12px 0 4px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.h}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Hadir</div></div>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.sk}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Sakit</div></div>
 <div style={{textAlign:"center",padding:"8px 4px",background:"#fff",borderRadius:10}}><div style={{fontSize:15,fontWeight:800,lineHeight:1}}>{rc.iz}</div><div style={{fontSize:9,color:"var(--text2)",fontWeight:600,marginTop:3}}>Izin</div></div>
@@ -524,7 +536,7 @@ return <div className="slip"><div className="slH"><img src={LR} alt="Awake"/><di
 {dt.nt&&<div style={{fontSize:12,color:"var(--text2)",marginTop:14,padding:"10px 14px",background:"var(--bg)",borderRadius:12,fontStyle:"italic"}}>&ldquo;{dt.nt}&rdquo;</div>}
 
 <div style={{display:"flex",gap:8,marginTop:16}}>
-<button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const rc2=emp?pR(emp.id,emp.pd):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));const msg="📄 *Slip Gaji "+pr+"*\n\n"+
+<button className="btn" style={{flex:1,background:"#25d366",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const MNS2=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];const pI2=MNS2.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);const now3=new Date();let off2=0;if(pI2>=0){off2=(now3.getFullYear()*12+now3.getMonth())-(pY2*12+pI2);if(off2<0)off2=0;}const rc2=emp?pR_o(emp.id,emp.pd,off2):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));const msg="📄 *Slip Gaji "+pr+"*\n\n"+
 "👤 "+emp?.n+" — "+emp?.p+"\n"+
 "🏢 Awake Studios\n\n"+
 "📊 Rekap: "+rc2.h+" Hadir, "+rc2.sk+" Sakit, "+rc2.iz+" Izin, "+rc2.t+" Telat, "+lbrJ+" Lembur\n\n"+
@@ -537,7 +549,7 @@ window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.622-1.467A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
 WhatsApp</button>
 
-<button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const rc2=emp?pR(emp.id,emp.pd):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));
+<button className="btn" style={{flex:1,background:"var(--br)",color:"#fff",fontSize:11,padding:"10px 8px"}} onClick={()=>{const MNS2=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];const pI2=MNS2.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));const pY2=parseInt((pr.match(/\d{4}/)||["2026"])[0]);const now3=new Date();let off2=0;if(pI2>=0){off2=(now3.getFullYear()*12+now3.getMonth())-(pY2*12+pI2);if(off2<0)off2=0;}const rc2=emp?pR_o(emp.id,emp.pd,off2):{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};const lbrJ=fj(rj(rc2.ol+rc2.ow));
 const inc=(dt.it||[]).filter(x=>x.t==="i");const ded=(dt.it||[]).filter(x=>x.t==="d");
 const w=window.open("","_blank");
 w.document.write("<html><head><title>Slip_"+emp?.n+"_"+pr+"</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,-apple-system,sans-serif}body{padding:40px;max-width:500px;margin:0 auto}.hdr{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #eee}.title{font-size:14px;font-weight:800}.sub{font-size:10px;color:#666;margin-top:4px;text-transform:uppercase;letter-spacing:1px}.info{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #f0f0f0}.info strong{font-weight:700}.rekap{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:12px 0;padding:10px;background:#f5f3ec;border-radius:8px}.rk{text-align:center}.rk-v{font-size:14px;font-weight:800}.rk-l{font-size:8px;color:#666}.sc{font-size:9px;font-weight:800;color:#AF1917;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px;padding-top:10px;border-top:2px solid #f5f3ec}.sc:first-of-type{border:none;padding:0;margin-top:8px}.row{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #f5f3ec}.row:last-child{border-bottom:none}.total{background:linear-gradient(135deg,#AF1917,#6b0f0e);color:#fff;padding:12px 14px;border-radius:10px;margin-top:12px;display:flex;justify-content:space-between;font-weight:800;font-size:14px}.foot{text-align:center;font-size:9px;color:#999;margin-top:20px}</style></head><body>"+
@@ -565,7 +577,7 @@ Link</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v3.0";
+const APP_VER="v3.1";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
@@ -675,7 +687,9 @@ return <tr key={dt.toISOString()} style={(we||hol)?{background:"#fdf2f2"}:{}}><t
 
 const APay=()=>{const sel=sls||em[0]?.id;const pds=eSP(sel);
 return <><div className="cd"><div className="ch"><span className="ct">Slip Gaji</span><select className="inp" style={{fontWeight:600,width:"auto",maxWidth:200}} value={sel} onChange={e=>sSls(e.target.value)}>{em.map(e=><option key={e.id} value={e.id}>{e.n}</option>)}</select></div>
-{!sns?<button className="btn" onClick={()=>{sSns(true);sSnp("April 2026");}}><Plus size={14}/>Buat Slip Baru</button>:<div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}><input className="inp" value={snp} onChange={e=>sSnp(e.target.value)} placeholder="April 2026" style={{width:220}}/><button className="btn bs" onClick={()=>{if(snp){sEk({e:sel,p:snp});editingRef.current=true;sSns(false);}}}>Buat</button><button className="btn bo bs" onClick={()=>sSns(false)}>Batal</button></div>}
+{!sns?<button className="btn" onClick={()=>{sSns(true);sSnp(MN[new Date().getMonth()]+" "+new Date().getFullYear());}}><Plus size={14}/>Buat Slip Baru</button>:<div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}><select className="inp" value={snp} onChange={e=>sSnp(e.target.value)} style={{width:220}}>
+{(()=>{const opts=[];const now2=new Date();for(let i=0;i<12;i++){const d=new Date(now2.getFullYear(),now2.getMonth()-i,1);opts.push(MN[d.getMonth()]+" "+d.getFullYear());}return opts.map(o=><option key={o} value={o}>{o}</option>);})()}
+</select><button className="btn bs" onClick={()=>{if(snp){sEk({e:sel,p:snp});editingRef.current=true;sSns(false);}}}>Buat</button><button className="btn bo bs" onClick={()=>sSns(false)}>Batal</button></div>}
 </div>
 {ek?.e===sel&&<SlipEd ei={sel} pr={ek.p} ex={sl[sel]?.[ek.p]} onSv={(it,nt)=>{editingRef.current=false;svSl(sel,ek.p,it,nt);sEk(null);}} onCn={()=>{sEk(null);editingRef.current=false;}}/>}
 {pds.filter(p=>!(ek?.e===sel&&ek?.p===p)).map(p=><SlipVw key={p} ei={sel} pr={p} dt={sl[sel][p]} adm={true} onEd={()=>sEk({e:sel,p})} onDl={()=>{sSl(prev=>{const n={...prev};if(n[sel]){const c={...n[sel]};delete c[p];n[sel]=c;}return n;});}}/>)}
@@ -702,7 +716,23 @@ return <div className="cd"><div className="ch"><span className="ct">Input Lembur
 Lembur hanya dihitung jika ada perintah dari atasan. Admin input manual di sini.<br/>
 Potongan istirahat: lembur &gt;2 jam dipotong 30 menit, &gt;4 jam dipotong 60 menit.
 </div>
-{showLbr&&<LbrForm em={em} onSubmit={(f)=>{const emp=em.find(e=>e.id===f.ei);si("overtime",{employee_id:f.ei,employee_name:emp.n,date:f.tgl,hours:f.jam,notes:f.ket}).then(r=>{if(r?.[0])sLbr(p=>[...p,{id:r[0].id,ei:f.ei,en:emp.n,tgl:f.tgl,jam:f.jam,ket:f.ket}]);});sShowLbr(false);}}/>}
+{showLbr&&!batchMode&&<LbrForm em={em} onSubmit={(f)=>{const emp=em.find(e=>e.id===f.ei);si("overtime",{employee_id:f.ei,employee_name:emp.n,date:f.tgl,hours:f.jam,notes:f.ket}).then(r=>{if(r?.[0])sLbr(p=>[...p,{id:r[0].id,ei:f.ei,en:emp.n,tgl:f.tgl,jam:f.jam,ket:f.ket}]);});sShowLbr(false);}}/>}
+
+{batchMode&&<div style={{marginBottom:16,padding:16,background:"var(--bg)",borderRadius:16}}>
+<div style={{fontSize:15,fontWeight:800,marginBottom:12}}>Input Lembur Masal</div>
+<div style={{marginBottom:10}}><div style={{fontSize:11,fontWeight:700,color:"var(--text2)",marginBottom:4}}>Tanggal</div><input className="inp" type="date" value={batchLbr.tgl} onChange={e=>sBatchLbr(p=>({...p,tgl:e.target.value}))}/></div>
+<div style={{marginBottom:12}}><div style={{fontSize:11,fontWeight:700,color:"var(--text2)",marginBottom:4}}>Keterangan</div><input className="inp" value={batchLbr.ket} onChange={e=>sBatchLbr(p=>({...p,ket:e.target.value}))} placeholder="Misal: Packing order bulk"/></div>
+<div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:12,fontWeight:700}}>Pilih Karyawan</span>
+<div style={{display:"flex",gap:6}}><button className="btn bo" style={{padding:"6px 10px",fontSize:11}} onClick={()=>{const all={};const aj={};em.forEach(e=>{all[e.id]=true;aj[e.id]=batchLbr.jams[e.id]||3;});sBatchLbr(p=>({...p,sel:all,jams:aj}))}}>Pilih Semua</button>
+<button className="btn bo" style={{padding:"6px 10px",fontSize:11}} onClick={()=>sBatchLbr(p=>({...p,sel:{},jams:{}}))}>Reset</button></div></div>
+<div className="tw"><table style={{fontSize:12}}><thead><tr><th style={{width:30}}></th><th>Nama</th><th style={{width:70}}>Jam</th></tr></thead><tbody>
+{em.map((e,i)=>{const checked=!!batchLbr.sel[e.id];return <tr key={e.id} style={checked?{background:"#fdf2f2"}:{}}><td><input type="checkbox" checked={checked} onChange={()=>{sBatchLbr(p=>{const ns={...p.sel};const nj={...p.jams};if(ns[e.id]){delete ns[e.id];delete nj[e.id];}else{ns[e.id]=true;nj[e.id]=nj[e.id]||3;}return{...p,sel:ns,jams:nj};});}} style={{accentColor:"var(--br)",width:16,height:16,cursor:"pointer"}}/></td><td style={{fontWeight:checked?700:400,color:checked?"var(--text)":"var(--text3)"}}>{e.n}</td><td>{checked?<input className="inp" type="number" step="0.5" min="0.5" value={batchLbr.jams[e.id]||""} onChange={e2=>sBatchLbr(p=>({...p,jams:{...p.jams,[e.id]:+e2.target.value}}))} style={{width:60,padding:"6px 8px",fontSize:12,textAlign:"center"}}/>:<span style={{color:"var(--text3)"}}>-</span>}</td></tr>;})}
+</tbody></table></div>
+<div style={{display:"flex",gap:8,marginTop:12}}>
+<button className="btn bo" style={{flex:1,fontSize:12}} onClick={()=>{const j=prompt("Isi jam untuk semua yang dicentang:","3");if(j){const jn=parseFloat(j);if(jn>0)sBatchLbr(p=>{const nj={...p.jams};Object.keys(p.sel).forEach(id=>{nj[id]=jn;});return{...p,jams:nj};});}}}>Isi Semua</button>
+<button className="btn" style={{flex:2,fontSize:12,background:"var(--br)",color:"#fff"}} onClick={async()=>{if(!batchLbr.tgl){alert("Pilih tanggal dulu");return;}const ids=Object.keys(batchLbr.sel).filter(id=>batchLbr.jams[id]>0);if(!ids.length){alert("Pilih minimal 1 karyawan");return;}editingRef.current=true;let ok=0;for(const id of ids){const emp=em.find(e=>e.id===id);const jam=batchLbr.jams[id];const r=await si("overtime",{employee_id:id,employee_name:emp.n,date:batchLbr.tgl,hours:jam,notes:batchLbr.ket});if(r?.[0]){sLbr(p=>[...p,{id:r[0].id,ei:id,en:emp.n,tgl:batchLbr.tgl,jam,ket:batchLbr.ket}]);ok++;}}editingRef.current=false;alert("Tersimpan: "+ok+" karyawan");sBatchMode(false);sBatchLbr({tgl:"",ket:"",sel:{},jams:{}});}}>Simpan {Object.keys(batchLbr.sel).length} Karyawan</button>
+</div>
+</div>}
 
 <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Rekap Lembur per Karyawan</div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8,marginBottom:16}}>
