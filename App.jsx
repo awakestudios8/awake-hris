@@ -401,12 +401,10 @@ if(res){const{emps,accs}=res;try{const ss=sessionStorage.getItem("hris_session")
 sLd(false);
 })();
 /* Auto-refresh on tab focus */
-const onFocus=()=>{if(document.visibilityState==="visible"&&!ld&&!editingRef.current){loadAllData(false);}};
-document.addEventListener("visibilitychange",onFocus);
-window.addEventListener("focus",onFocus);
-/* Polling every 30 seconds when tab is active */
-const poll=setInterval(()=>{if(document.visibilityState==="visible"&&!editingRef.current){loadAllData(false);}},60000);
-return()=>{document.removeEventListener("visibilitychange",onFocus);window.removeEventListener("focus",onFocus);clearInterval(poll);};
+const onVis=()=>{if(document.visibilityState==="visible"&&!editingRef.current){loadAllData(false);}};
+document.addEventListener("visibilitychange",onVis);
+const poll=setInterval(()=>{if(document.visibilityState==="visible"&&!editingRef.current){loadAllData(false);}},120000);
+return()=>{document.removeEventListener("visibilitychange",onVis);clearInterval(poll);};
 },[]);
 
 
@@ -627,7 +625,7 @@ Link</button>
 const aN=[{id:"dashboard",l:"Dashboard",ic:Home},{id:"attendance",l:"Kehadiran",ic:Clock},{id:"calendar",l:"Rekap Periode",ic:Calendar},{id:"payslip",l:"Slip Gaji",ic:Wallet},{id:"leave",l:"Cuti & Izin",ic:FileText},{id:"sp2",l:"Surat Peringatan",ic:AlertTriangle},{id:"lembur",l:"Input Lembur",ic:TrendingUp},{id:"dispensasi",l:"Dispensasi",ic:Shield},{id:"employees",l:"Karyawan",ic:Users},{id:"accounts",l:"Akun Karyawan",ic:Key},{id:"upload",l:"Upload Deli",ic:Upload},{id:"affiliate",l:"Affiliator",ic:Award}];
 const eN=[{id:"emp-dash",l:"Beranda",ic:Home},{id:"emp-att",l:"Kehadiran",ic:Clock},{id:"emp-pay",l:"Slip Gaji",ic:Wallet},{id:"emp-leave",l:"Cuti & Izin",ic:FileText},{id:"emp-sp",l:"SP Saya",ic:AlertTriangle},{id:"emp-pw",l:"Ubah Password",ic:Key},{id:"emp-aff",l:"Affiliate Saya",ic:Award}];
 const nav=rl==="admin"?aN:eN;
-const APP_VER="v3.5";
+const APP_VER="v3.6";
 const titles={dashboard:"Dashboard",attendance:"Kehadiran",calendar:"Rekap Periode Gaji",payslip:"Slip Gaji",leave:"Cuti & Izin",sp2:"Surat Peringatan",lembur:"Input Lembur",dispensasi:"Dispensasi Keterlambatan",employees:"Karyawan & Jabatan",accounts:"Akun Karyawan",upload:"Upload Deli 3765","emp-dash":"Beranda","emp-att":"Kehadiran","emp-pay":"Slip Gaji","emp-leave":"Cuti & Izin","emp-sp":"Surat Peringatan","emp-pw":"Ubah Password","affiliate":"Affiliator Terbaik","emp-aff":"Performa Affiliate"};
 
 // ═══ EMPLOYEE DASHBOARD — simplified, period-aware ═══
