@@ -4,44 +4,41 @@ import { jsPDF } from "jspdf";
 
 const buildSlipPDF=(emp,pr,dt,tot,pR_o,gA,safeSt,isHoliday,rj,fj,fm,MN,LW)=>{
 const doc=new jsPDF({unit:"mm",format:[148,210],orientation:"portrait"});
-const W=148;const mg=14;const cw=W-mg*2;let y=0;
-/* Red header banner */
-doc.setFillColor(175,25,23);doc.rect(0,0,W,42,"F");
-doc.setFillColor(138,20,18);doc.rect(0,35,W,7,"F");
-/* White circle for logo area */
-doc.setFillColor(255,255,255);doc.circle(W/2,22,12,"F");
-doc.setFillColor(175,25,23);doc.roundedRect(W/2-14,14,28,16,3,3,"F");
-doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont("helvetica","bold");
-doc.text("AWAKE",W/2,21,{align:"center"});
-doc.text("STUDIOS",W/2,26,{align:"center"});
-/* Title on banner */
-doc.setTextColor(255,255,255);doc.setFontSize(6);doc.setFont("helvetica","normal");
-doc.text("SLIP GAJI",W/2,36,{align:"center"});
-doc.setFontSize(9);doc.setFont("helvetica","bold");
-doc.text(pr.toUpperCase(),W/2,40,{align:"center"});
+const W=148;const H=210;const mg=14;const cw=W-mg*2;let y=0;
+/* ===== RED HEADER BANNER ===== */
+doc.setFillColor(175,25,23);doc.rect(0,0,W,44,"F");
+/* Logo image */
+try{doc.addImage(LW,"PNG",W/2-16,6,32,19);}catch(e){
+doc.setTextColor(255,255,255);doc.setFontSize(10);doc.setFont("helvetica","bold");
+doc.text("AWAKE STUDIOS",W/2,18,{align:"center"});}
+/* Slip title */
+doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont("helvetica","normal");
+doc.text("SLIP GAJI",W/2,32,{align:"center"});
+doc.setFontSize(11);doc.setFont("helvetica","bold");
+doc.text(pr.toUpperCase(),W/2,38,{align:"center"});
 y=50;
-/* Employee info card */
-doc.setFillColor(250,250,247);doc.roundedRect(mg,y,cw,18,3,3,"F");
+/* ===== EMPLOYEE INFO CARD ===== */
+doc.setFillColor(248,246,238);doc.roundedRect(mg,y,cw,20,4,4,"F");
 doc.setFontSize(14);doc.setTextColor(15,15,15);doc.setFont("helvetica","bold");
-doc.text(emp?.n||"",mg+5,y+8);
-doc.setFontSize(9);doc.setTextColor(100,116,139);doc.setFont("helvetica","normal");
-doc.text(emp?.p||"-",mg+5,y+14);
-/* Pay period */
+doc.text(emp?.n||"",mg+6,y+9);
+doc.setFontSize(9);doc.setTextColor(120,113,108);doc.setFont("helvetica","normal");
+doc.text(emp?.p||"-",mg+6,y+15);
+/* Period label on right */
 const MNS=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const pI=MNS.findIndex(m=>pr.toLowerCase().includes(m.toLowerCase()));
 const pY=parseInt((pr.match(/\d{4}/)||["2026"])[0]);
 const pd=emp?.pd||1;
 let prdLabel=pr;
-if(pI>=0){
-let sd2,ed2;
+if(pI>=0){let sd2,ed2;
 if(pd===1){sd2=new Date(pY,pI,1);ed2=new Date(pY,pI+1,0);}
 else{sd2=new Date(pY,pI,pd);ed2=new Date(pY,pI+1,pd-1);}
-prdLabel=sd2.getDate()+" "+MNS[sd2.getMonth()]+" - "+ed2.getDate()+" "+MNS[ed2.getMonth()]+" "+pY;
-}
-doc.setFontSize(7);doc.setTextColor(175,25,23);doc.setFont("helvetica","bold");
-doc.text("Periode: "+prdLabel,mg+cw-5,y+8,{align:"right"});
-y+=22;
-/* Rekap kehadiran */
+prdLabel=sd2.getDate()+" "+MNS[sd2.getMonth()]+" - "+ed2.getDate()+" "+MNS[ed2.getMonth()]+" "+pY;}
+doc.setFontSize(6);doc.setTextColor(175,25,23);doc.setFont("helvetica","bold");
+doc.text("Periode:",mg+cw-6,y+8,{align:"right"});
+doc.setFont("helvetica","normal");doc.setFontSize(6);
+doc.text(prdLabel,mg+cw-6,y+13,{align:"right"});
+y+=24;
+/* ===== REKAP KEHADIRAN ===== */
 const rc=(()=>{if(!emp||pI<0)return{h:0,sk:0,iz:0,t:0,a:0,ol:0,ow:0};
 let sd3,ed3;
 if(pd===1){sd3=new Date(pY,pI,1);ed3=new Date(pY,pI+1,0);}
@@ -56,70 +53,72 @@ if(st2==="Hadir"||st2==="Terlambat")h++;else if(st2==="Alpha")a++;else if(st2===
 if(st2==="Terlambat")t++;if(at2.oh>0)ol=rj(ol+at2.oh);
 }return{h,t,a,ol,ow,iz,sk};})();
 const lbrJ=fj(rj(rc.ol+rc.ow));
-doc.setFillColor(245,243,236);doc.roundedRect(mg,y,cw,16,3,3,"F");
+/* Rekap boxes */
+doc.setFillColor(248,246,238);doc.roundedRect(mg,y,cw,18,4,4,"F");
 const rw=cw/6;
-const rekapData=[[rc.h,"Hadir",false],[rc.sk,"Sakit",false],[rc.iz,"Izin",false],[rc.t,"Telat",false],[rc.a,"Alpha",false],[lbrJ,"Lembur",true]];
+const rekapData=[[rc.h,"Hadir"],[rc.sk,"Sakit"],[rc.iz,"Izin"],[rc.t,"Telat"],[rc.a,"Alpha"],[lbrJ,"Lembur"]];
 rekapData.forEach((r,i)=>{
 const cx=mg+rw*i+rw/2;
-doc.setFontSize(12);doc.setFont("helvetica","bold");
-if(r[2])doc.setTextColor(175,25,23);else doc.setTextColor(15,15,15);
-doc.text(""+r[0],cx,y+8,{align:"center"});
-doc.setFontSize(6);doc.setTextColor(100,116,139);doc.setFont("helvetica","normal");
-doc.text(r[1],cx,y+13,{align:"center"});
+/* Small white box per item */
+doc.setFillColor(255,255,255);doc.roundedRect(cx-rw/2+1.5,y+1.5,rw-3,15,2,2,"F");
+doc.setFontSize(11);doc.setFont("helvetica","bold");
+if(r[1]==="Lembur")doc.setTextColor(175,25,23);else doc.setTextColor(15,15,15);
+doc.text(""+r[0],cx,y+9,{align:"center"});
+doc.setFontSize(5.5);doc.setTextColor(120,113,108);doc.setFont("helvetica","normal");
+doc.text(r[1],cx,y+14,{align:"center"});
 });
-y+=20;
-/* Pendapatan section */
+y+=22;
+/* ===== PENDAPATAN ===== */
 const inc=dt.it?.filter(x=>x.t==="i")||[];
 const ded=dt.it?.filter(x=>x.t==="d")||[];
-doc.setFillColor(175,25,23);doc.roundedRect(mg,y,40,5,1,1,"F");
-doc.setTextColor(255,255,255);doc.setFontSize(6);doc.setFont("helvetica","bold");
-doc.text("  PENDAPATAN",mg+1,y+3.5);
-y+=8;
+doc.setFontSize(7);doc.setFont("helvetica","bold");doc.setTextColor(175,25,23);
+doc.text("PENDAPATAN",mg,y);
+doc.setDrawColor(175,25,23);doc.setLineWidth(0.4);doc.line(mg,y+1.5,mg+28,y+1.5);
+y+=5;
 doc.setFont("helvetica","normal");doc.setFontSize(9);
 inc.forEach((x,i)=>{
-doc.setTextColor(15,15,15);doc.text(x.l,mg,y);
-doc.setFont("helvetica","bold");doc.text(fm(x.a),mg+cw,y,{align:"right"});
+doc.setTextColor(60,60,60);doc.text(x.l,mg+1,y);
+doc.setTextColor(15,15,15);doc.setFont("helvetica","bold");doc.text(fm(x.a),mg+cw,y,{align:"right"});
 doc.setFont("helvetica","normal");
-if(i<inc.length-1){doc.setDrawColor(245,243,236);doc.setLineWidth(0.3);doc.line(mg,y+2,mg+cw,y+2);}
+doc.setDrawColor(238,236,228);doc.setLineWidth(0.2);doc.line(mg,y+2,mg+cw,y+2);
 y+=6;
 });
-/* Potongan section */
+/* ===== POTONGAN ===== */
 if(ded.length){
 y+=2;
-doc.setFillColor(175,25,23);doc.roundedRect(mg,y,36,5,1,1,"F");
-doc.setTextColor(255,255,255);doc.setFontSize(6);doc.setFont("helvetica","bold");
-doc.text("  POTONGAN",mg+1,y+3.5);
-y+=8;
+doc.setFontSize(7);doc.setFont("helvetica","bold");doc.setTextColor(175,25,23);
+doc.text("POTONGAN",mg,y);
+doc.setDrawColor(175,25,23);doc.setLineWidth(0.4);doc.line(mg,y+1.5,mg+24,y+1.5);
+y+=5;
 doc.setFont("helvetica","normal");doc.setFontSize(9);
 ded.forEach((x,i)=>{
-doc.setTextColor(15,15,15);doc.text(x.l,mg,y);
+doc.setTextColor(60,60,60);doc.text(x.l,mg+1,y);
 doc.setTextColor(175,25,23);doc.setFont("helvetica","bold");
 doc.text("-"+fm(x.a),mg+cw,y,{align:"right"});
 doc.setFont("helvetica","normal");
-if(i<ded.length-1){doc.setDrawColor(245,243,236);doc.setLineWidth(0.3);doc.line(mg,y+2,mg+cw,y+2);}
+doc.setDrawColor(238,236,228);doc.setLineWidth(0.2);doc.line(mg,y+2,mg+cw,y+2);
 y+=6;
 });
 }
-/* Total bar */
+/* ===== TOTAL BAR ===== */
 y+=4;
 doc.setFillColor(175,25,23);doc.roundedRect(mg,y,cw,16,4,4,"F");
-doc.setFillColor(107,15,14);doc.roundedRect(mg+cw*0.6,y,cw*0.4,16,4,4,"F");
 doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont("helvetica","bold");
 doc.text("TOTAL DITERIMA",mg+6,y+10);
 doc.setFontSize(14);
 doc.text(fm(tot.n),mg+cw-6,y+10,{align:"right"});
 y+=20;
-/* Notes */
+/* ===== NOTES ===== */
 if(dt.nt){
-doc.setFillColor(245,243,236);doc.roundedRect(mg,y,cw,10,3,3,"F");
-doc.setFontSize(7);doc.setTextColor(100,116,139);doc.setFont("helvetica","italic");
+doc.setFillColor(248,246,238);doc.roundedRect(mg,y,cw,10,3,3,"F");
+doc.setFontSize(7);doc.setTextColor(120,113,108);doc.setFont("helvetica","italic");
 doc.text(dt.nt,mg+4,y+6,{maxWidth:cw-8});
 y+=14;
 }
-/* Footer line */
-doc.setDrawColor(245,243,236);doc.setLineWidth(0.3);doc.line(mg,195,mg+cw,195);
-doc.setFontSize(6);doc.setTextColor(187,187,187);doc.setFont("helvetica","normal");
-doc.text("Dicetak dari Awake HRIS · "+new Date().toLocaleDateString("id-ID"),W/2,199,{align:"center"});
+/* ===== FOOTER ===== */
+doc.setDrawColor(238,236,228);doc.setLineWidth(0.2);doc.line(mg,H-16,mg+cw,H-16);
+doc.setFontSize(6);doc.setTextColor(180,180,180);doc.setFont("helvetica","normal");
+doc.text("Dicetak dari Awake HRIS  ·  "+new Date().toLocaleDateString("id-ID"),W/2,H-12,{align:"center"});
 return doc;
 };
 
