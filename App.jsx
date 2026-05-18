@@ -152,7 +152,7 @@ const su=async(t,d,q)=>{try{await fetch(SUPA+"/rest/v1/"+t+"?"+q,{method:"PATCH"
 const sd=async(t,q)=>{try{await fetch(SUPA+"/rest/v1/"+t+"?"+q,{method:"DELETE",headers:SH});}catch(e){}};
 const p2=n=>String(n).padStart(2,"0");
 const MN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-const HOLIDAYS={"2026-01-01":"Tahun Baru","2026-01-29":"Isra Miraj","2026-02-18":"Tahun Baru Imlek","2026-03-20":"Hari Raya Nyepi","2026-03-22":"Cuti Bersama Nyepi","2026-04-03":"Wafat Isa Almasih","2026-04-05":"Paskah","2026-05-01":"Hari Buruh","2026-05-16":"Waisak","2026-05-21":"Kenaikan Isa Almasih","2026-06-01":"Hari Lahir Pancasila","2026-06-17":"Idul Adha","2026-07-07":"Tahun Baru Islam","2026-08-17":"Kemerdekaan RI","2026-09-16":"Maulid Nabi","2026-12-25":"Natal","2026-12-26":"Cuti Bersama Natal"};
+const HOLIDAYS={"2026-01-01":"Tahun Baru","2026-01-16":"Isra Miraj","2026-02-16":"Cuti Bersama Imlek","2026-02-17":"Tahun Baru Imlek","2026-03-18":"Cuti Bersama Nyepi","2026-03-19":"Hari Raya Nyepi","2026-03-20":"Cuti Bersama Idul Fitri","2026-03-21":"Idul Fitri","2026-03-22":"Idul Fitri","2026-03-23":"Cuti Bersama Idul Fitri","2026-03-24":"Cuti Bersama Idul Fitri","2026-04-03":"Wafat Isa Almasih","2026-05-01":"Hari Buruh","2026-05-14":"Kenaikan Isa Almasih","2026-05-15":"Cuti Bersama Kenaikan Isa Almasih","2026-05-27":"Idul Adha","2026-05-28":"Cuti Bersama Idul Adha","2026-05-31":"Waisak","2026-06-01":"Hari Lahir Pancasila","2026-06-16":"Tahun Baru Islam","2026-08-17":"Kemerdekaan RI","2026-08-25":"Maulid Nabi","2026-12-24":"Cuti Bersama Natal","2026-12-25":"Natal"};
 const isHoliday=(dt)=>{if(!dt)return false;const k=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');return HOLIDAYS[k]||false;};
 const rj=n=>Math.round(n*10)/10; // round to 1 decimal, no floating mess
 const gM=()=>({});
@@ -503,7 +503,7 @@ sf("leaves","?order=created_at.desc"),
 sf("warnings","?order=issued_date.desc"),
 sf("payslips"),
 sf("overtime","?order=date.desc"),
-sf("daily_status"),
+sf("daily_status","?order=date.desc&limit=100000"),
 sf("dispensations"),
 sf("affiliate_data"),
 sf("affiliate_map"),
@@ -560,7 +560,7 @@ return{...none,st:st2,ci:mci,co:ms.co||null,oi:ms.oi||null,oo:ms.oo||null,oh:get
 /* 3. Approved leaves */
 if(dateStr){const leave=lv.find(l=>l.ei===ei&&l.st==="Approved"&&dateStr>=l.s&&dateStr<=l.e);if(leave)return{...none,st:leave.t,oh:getOT()};}
 /* 4. Punch data */
-const r=pP(aP[ei]?.[d],dp[ei+"-"+d]);const ok=ei+"-"+d;if(ovr[ok]?.oh!==undefined)r.oh=ovr[ok].oh;if(ovr[ok]?.obk!==undefined)r.obk=ovr[ok].obk;
+const r=pP(aP[ei]?.[d],dateKey?dp[dateKey]:false);const ok=dateKey||ei+"-"+d;if(ovr[ok]?.oh!==undefined)r.oh=ovr[ok].oh;if(ovr[ok]?.obk!==undefined)r.obk=ovr[ok].obk;
 /* 5. Sunday or public holiday */
 if(checkDt){const w=checkDt.getDay();const hol=isHoliday(checkDt);if(w===0||hol){const otH=getOT();if(r.st==="Alpha")return{...none,st:"-",oh:otH,wt:otH>0};if(otH>0)r.oh=Math.max(r.oh,otH);}}
 /* 6. Regular day overtime */
@@ -953,18 +953,34 @@ const logs=[];let saved=0,skipped=0;
 
 /* Parse attendance date range from header */
 let rangeStart=null,rangeEnd=null;
-for(let r=0;r<Math.min(10,range.e.r);r++){
-for(let c=0;c<=range.e.c;c++){
+/* Search for date range in all cells within first 20 rows */
+for(let r=0;r<=Math.min(20,range.e.r)&&!rangeStart;r++){
+for(let c=0;c<=range.e.c&&!rangeStart;c++){
 const cell=ws[XLSX.utils.encode_cell({r,c})];
-if(cell&&String(cell.v).includes("Attendance date:")){
-const m=String(cell.v).match(/(\d{4})-(\d{2})-(\d{2})~(\d{4})-(\d{2})-(\d{2})/);
+if(!cell)continue;
+const cv=String(cell.v);
+/* Try multiple patterns to find the date range */
+const m=cv.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})\s*[~\-]\s*(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
 if(m){rangeStart=new Date(+m[1],+m[2]-1,+m[3]);rangeEnd=new Date(+m[4],+m[5]-1,+m[6]);}
-}}}
+}}
+/* Second pass: look for "Tabling date" or any date that hints the month */
 if(!rangeStart){
-/* Fallback: use current month */
+for(let r=0;r<=Math.min(20,range.e.r)&&!rangeStart;r++){
+for(let c=0;c<=range.e.c&&!rangeStart;c++){
+const cell=ws[XLSX.utils.encode_cell({r,c})];
+if(!cell)continue;
+const cv=String(cell.v);
+const mt=cv.match(/[Tt]abling\s*date[:\s]*(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
+if(mt){
+/* Use tabling date's month as the attendance month */
+const ty=+mt[1],tm=+mt[2]-1,td=+mt[3];
+rangeStart=new Date(ty,tm,1);rangeEnd=new Date(ty,tm+1,0);
+}}}}
+if(!rangeStart){
+/* Last fallback: use current month */
 const now=new Date();rangeStart=new Date(now.getFullYear(),now.getMonth(),1);
 rangeEnd=new Date(now.getFullYear(),now.getMonth()+1,0);
-logs.push("Peringatan: Tidak ditemukan range tanggal di file, menggunakan bulan ini");
+logs.push("⚠️ Tidak ditemukan range tanggal di file, menggunakan bulan ini ("+MN[now.getMonth()]+" "+now.getFullYear()+")");
 }
 logs.push("Periode: "+rangeStart.toLocaleDateString("id-ID")+" - "+rangeEnd.toLocaleDateString("id-ID"));
 
