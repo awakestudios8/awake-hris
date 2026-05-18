@@ -482,6 +482,7 @@ const[ee,sEe]=useState(null);const[ef,sEf]=useState({p:"",pd:1,s:0});
 const[sns,sSns]=useState(false);const[snp,sSnp]=useState("");const[sls,sSls]=useState("");const[ups,sUps]=useState("");const[ovr,sOvr]=useState({});const[manAtt,sManAtt]=useState({});const[lbr,sLbr]=useState([]);const[showLbr,sShowLbr]=useState(false);const[lbrF,sLbrF]=useState({ei:"",tgl:"",jam:0,ket:""});const[eLbr,sELbr]=useState(null);const[eLbrF,sELbrF]=useState({jam:0,ket:""});
 const[regF,sRegF]=useState({e:"",u:"",p:""});const[showReg,sShowReg]=useState(false);
 const[newEmp,sNewEmp]=useState(false);const[newEmpF,sNewEmpF]=useState({id:"",n:"",p:"Staff",pd:1,s:0});
+const[unreg,sUnreg]=useState([]);
 const[chpw,sChpw]=useState({o:"",n:"",c:""});
 const[saldoHidden,sSaldoHidden]=useState(true);
 const[fabOpen,sFabOpen]=useState(false);
@@ -942,6 +943,26 @@ const isDisp=dp[r.k];
 return <tr key={r.k}><td style={{fontWeight:600}}>{r.d} {MN[r.mo]}</td><td><div className="er"><div className="av sm" style={{background:AV[r.i%9]}}>{r.e.n[0]}</div>{r.e.n}</div></td><td className="mo">{r.ci}</td><td><span style={bg("terlambat")}>+{r.lm}m</span></td><td><span style={bg(isDisp?"hadir":"terlambat")}>{isDisp?"Hadir (Dispensasi)":"Terlambat"}</span></td><td><button className={"btn bs "+(isDisp?"bd":"bo")} onClick={()=>tD(r.e.id,r.dateStr)}>{isDisp?"Cabut":"Dispensasi"}</button></td></tr>;})}</tbody></table></div>}</div>;};
 
 const AEmp=()=><div className="cd"><div className="ch"><span className="ct">Karyawan & Jabatan</span><button className="btn" onClick={()=>sNewEmp(!newEmp)}>{newEmp?"Batal":<><Plus size={14}/>Tambah</>}</button></div>
+{unreg.length>0&&<div style={{padding:14,background:"#fefce8",borderRadius:12,marginBottom:12,border:"1px solid #fde68a"}}>
+<div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:8}}>⚠️ Karyawan belum terdaftar (dari upload):</div>
+{unreg.map(u=><div key={u.id} style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",marginBottom:8,padding:8,background:"#fff",borderRadius:8}}>
+<span style={{fontSize:12,fontWeight:600,color:BR,minWidth:70}}>{u.id}</span>
+<span style={{fontSize:13,fontWeight:600,minWidth:80}}>{u.n}</span>
+<select className="inp" defaultValue="Staff" id={"pos-"+u.id} style={{width:110,fontSize:12}}>{PL.map(p=><option key={p}>{p}</option>)}</select>
+<input className="inp" type="number" defaultValue={1} min={1} max={31} id={"pd-"+u.id} placeholder="Tgl Gaji" style={{width:60,fontSize:12}}/>
+<input className="inp" type="number" defaultValue={0} id={"sal-"+u.id} placeholder="Gaji" style={{width:100,fontSize:12}}/>
+<button className="btn bs" style={{background:BR,color:"#fff",fontSize:11}} onClick={async()=>{
+const pos=document.getElementById("pos-"+u.id)?.value||"Staff";
+const pd=+(document.getElementById("pd-"+u.id)?.value)||1;
+const sal=+(document.getElementById("sal-"+u.id)?.value)||0;
+const emp={id:u.id,n:u.n,d:"AWAKESTD",p:pos,pd,s:sal};
+try{const res=await fetch(SUPA+"/rest/v1/employees",{method:"POST",headers:SH,body:JSON.stringify({id:emp.id,name:emp.n,department:emp.d,position:emp.p,pay_date:emp.pd,salary:emp.s})});
+if(!res.ok){const t=await res.text();alert("Gagal: "+res.status+"\n"+t);return;}
+await res.json();sEm(p=>[...p,emp]);sUnreg(p=>p.filter(x=>x.id!==u.id));
+}catch(e){alert("Error: "+e.message);}
+}}>Daftarkan</button>
+</div>)}
+</div>}
 {newEmp&&<div style={{padding:14,background:BL,borderRadius:12,marginBottom:12}}>
 <div style={{fontSize:12,color:"#64748b",marginBottom:8}}>ID harus sesuai User ID di mesin absensi (contoh: 85146)</div>
 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
@@ -1015,6 +1036,7 @@ dayMap[dt.getDate()]=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0"
 }
 
 /* Parse employees: every 3-4 rows */
+const foundUnreg=[];
 for(let r=range.s.r;r<=range.e.r;r++){
 const uidCell=ws[XLSX.utils.encode_cell({r,c:4})];
 if(uidCell&&String(uidCell.v)==="User ID:"){
@@ -1022,6 +1044,8 @@ const idCell=ws[XLSX.utils.encode_cell({r,c:5})];
 const nameCell=ws[XLSX.utils.encode_cell({r,c:11})];
 if(!idCell)continue;
 let eid=String(idCell.v).trim();if(eid.includes('.'))eid=String(parseInt(eid));const ename=nameCell?String(nameCell.v).trim():"";
+/* Detect unregistered employees */
+if(!em.find(e=>e.id===eid)){foundUnreg.push({id:eid,n:ename});logs.push("⚠️ "+ename+" ("+eid+") belum terdaftar, data dilewati");continue;}
 /* Date header row = r+1, punch rows = r+2 and r+3 */
 const dateRow=r+1;const punchRow=r+2;const punchRow2=r+3;
 /* Read date columns */
@@ -1073,6 +1097,7 @@ const saveStr=JSON.stringify(punchData);
 try{await fetch(SUPA+"/rest/v1/daily_status?on_conflict=employee_id,date",{method:"POST",headers:{...SH,"Prefer":"return=representation,resolution=merge-duplicates"},body:JSON.stringify({employee_id:eid,date:dateStr,status:saveStr})});saved++;logs.push(ename+" "+day+" "+MN[dt.getMonth()]+": "+status+" ("+punches.join(", ")+")");}catch(e){logs.push(ename+" "+day+": GAGAL simpan");}
 }}}
 sUpRes({saved,skipped});sUps("d");sUpLog(logs);
+if(foundUnreg.length>0)sUnreg(foundUnreg);
 };
 return <div className="cd"><div className="ch"><span className="ct">Upload Deli 3765</span></div>
 <div className="ua"><label style={{cursor:"pointer",display:"block"}}><input type="file" accept=".xls,.xlsx,.csv" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(f)parseXls(f);e.target.value="";}}/><Upload size={32} color={BR} style={{marginBottom:8}}/><div style={{fontWeight:700,fontSize:15}}>Upload File</div><div style={{fontSize:13,color:"#94a3b8",marginTop:4}}>.xls .xlsx</div></label></div>
