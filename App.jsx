@@ -943,18 +943,20 @@ return <tr key={r.k}><td style={{fontWeight:600}}>{r.d} {MN[r.mo]}</td><td><div 
 const[newEmp,sNewEmp]=useState(false);const[newEmpF,sNewEmpF]=useState({id:"",n:"",p:"Staff",pd:1,s:0});
 const AEmp=()=><div className="cd"><div className="ch"><span className="ct">Karyawan & Jabatan</span><button className="btn" onClick={()=>sNewEmp(!newEmp)}>{newEmp?"Batal":<><Plus size={14}/>Tambah</>}</button></div>
 {newEmp&&<div style={{padding:14,background:BL,borderRadius:12,marginBottom:12}}>
+<div style={{fontSize:12,color:"#64748b",marginBottom:8}}>ID harus sesuai User ID di mesin absensi (contoh: 85146)</div>
 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
-<input className="inp" placeholder="ID Mesin Absensi" value={newEmpF.id} onChange={e=>sNewEmpF(p=>({...p,id:e.target.value}))} style={{width:130}}/>
+<input className="inp" placeholder="ID Mesin (User ID)" value={newEmpF.id} onChange={e=>sNewEmpF(p=>({...p,id:e.target.value.replace(/[^0-9]/g,"")}))} style={{width:140}}/>
 <input className="inp" placeholder="Nama Lengkap" value={newEmpF.n} onChange={e=>sNewEmpF(p=>({...p,n:e.target.value.toUpperCase()}))} style={{width:160}}/>
 <select className="inp" value={newEmpF.p} onChange={e=>sNewEmpF(p=>({...p,p:e.target.value}))} style={{width:130}}>{PL.map(p=><option key={p}>{p}</option>)}</select>
-<input className="inp" type="number" placeholder="Tgl Gaji" value={newEmpF.pd} onChange={e=>sNewEmpF(p=>({...p,pd:+e.target.value}))} style={{width:70}}/>
+<input className="inp" type="number" min="1" max="31" placeholder="Tgl Gaji" value={newEmpF.pd} onChange={e=>sNewEmpF(p=>({...p,pd:+e.target.value}))} style={{width:70}}/>
 <input className="inp" type="number" placeholder="Gaji Pokok" value={newEmpF.s} onChange={e=>sNewEmpF(p=>({...p,s:+e.target.value}))} style={{width:120}}/>
 </div>
-<button className="btn" style={{background:BR,color:"#fff"}} onClick={()=>{if(!newEmpF.id||!newEmpF.n){alert("ID dan Nama wajib diisi");return;}
+<button className="btn" style={{background:BR,color:"#fff"}} onClick={async()=>{if(!newEmpF.id||!newEmpF.n){alert("ID dan Nama wajib diisi");return;}
 if(em.find(e=>e.id===newEmpF.id)){alert("ID sudah ada");return;}
-const emp={id:newEmpF.id,n:newEmpF.n,d:"AWAKESTD",p:newEmpF.p,pd:newEmpF.pd,s:newEmpF.s};
-si("employees",{id:emp.id,name:emp.n,department:emp.d,position:emp.p,pay_date:emp.pd,salary:emp.s}).then(r=>{if(r?.[0])sEm(p=>[...p,emp]);});
-sNewEmp(false);sNewEmpF({id:"",n:"",p:"Staff",pd:1,s:0});
+const emp={id:newEmpF.id,n:newEmpF.n,d:"AWAKESTD",p:newEmpF.p,pd:newEmpF.pd||1,s:newEmpF.s||0};
+try{const res=await fetch(SUPA+"/rest/v1/employees",{method:"POST",headers:SH,body:JSON.stringify({id:emp.id,name:emp.n,department:emp.d,position:emp.p,pay_date:emp.pd,salary:emp.s})});
+if(!res.ok){const t=await res.text();alert("Gagal simpan: "+res.status+"\n"+t);return;}
+const j=await res.json();sEm(p=>[...p,emp]);sNewEmp(false);sNewEmpF({id:"",n:"",p:"Staff",pd:1,s:0});alert("Karyawan "+emp.n+" berhasil ditambahkan!");}catch(e){alert("Error koneksi: "+e.message);}
 }}>Simpan Karyawan Baru</button>
 </div>}
 <div className="tw"><table><thead><tr><th>ID</th><th>Nama</th><th>Jabatan</th><th>Tgl Gaji</th><th>Gaji Pokok</th><th>Aksi</th></tr></thead><tbody>{em.map((e,i)=>{const isE=ee===e.id;return <tr key={e.id}><td className="mo" style={{color:BR,fontWeight:600}}>{e.id}</td><td><div className="er"><div className="av" style={{background:AV[i%9]}}>{e.n[0]}</div><strong>{e.n}</strong></div></td><td>{isE?<select className="inp" value={ef.p} onChange={x=>sEf(p=>({...p,p:x.target.value}))} style={{width:130}}>{PL.map(p=><option key={p}>{p}</option>)}</select>:e.p}</td><td>{isE?<input className="inp" type="number" value={ef.pd} onChange={x=>sEf(p=>({...p,pd:+x.target.value}))} style={{width:60}}/>:<span style={bg("cuti")}>Tgl {e.pd}</span>}</td><td>{isE?<input className="inp" type="number" value={ef.s} onChange={x=>sEf(p=>({...p,s:+x.target.value}))} style={{width:120}}/>:fm(e.s)}</td><td>{isE?<div style={{display:"flex",gap:4}}><button className="btn bs" onClick={()=>{sEm(p=>p.map(x=>x.id===e.id?{...x,...ef}:x));su("employees",{position:ef.p,pay_date:ef.pd,salary:ef.s},"id=eq."+e.id);sEe(null);}}><Check size={12}/></button><button className="btn bo bs" onClick={()=>sEe(null)}><X size={12}/></button></div>:<button className="btn bo bs" onClick={()=>{sEe(e.id);sEf({p:e.p,pd:e.pd,s:e.s});}}><Edit3 size={12}/></button>}</td></tr>;})}</tbody></table></div></div>;
