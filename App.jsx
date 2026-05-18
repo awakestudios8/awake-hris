@@ -917,8 +917,11 @@ const ADisp=()=>{
 const today2=new Date();today2.setHours(0,0,0,0);
 const calcLate=(ci)=>{if(!ci)return 0;const[h,m]=ci.split(":").map(Number);return Math.max(0,h*60+m-480);};
 const rows=[];
-em.forEach((e,i)=>{const pr=getPR(e.pd);
-for(let dt=new Date(pr.ed);dt>=pr.sd;dt.setDate(dt.getDate()-1)){
+/* Only current month */
+const cmStart=new Date(today2.getFullYear(),today2.getMonth(),1);
+const cmEnd=new Date(today2.getFullYear(),today2.getMonth()+1,0);
+em.forEach((e,i)=>{
+for(let dt=new Date(cmEnd);dt>=cmStart;dt.setDate(dt.getDate()-1)){
 const chk=new Date(dt);chk.setHours(0,0,0,0);if(chk>today2)continue;
 const w=chk.getDay();if(w===0||isHoliday(chk))continue;
 const d=dt.getDate();const mo=dt.getMonth();
@@ -928,14 +931,33 @@ if(lm<=0||!ci)continue;
 const dateStr=chk.getFullYear()+"-"+String(chk.getMonth()+1).padStart(2,"0")+"-"+String(chk.getDate()).padStart(2,"0");
 const k=e.id+"-"+dateStr;
 rows.push({k,d,mo,e,i,ci,lm,a,dateStr});}});
-return <div className="cd"><div className="ch"><span className="ct">Dispensasi Keterlambatan</span></div>
+/* Sort by date descending */
+rows.sort((a,b)=>b.dateStr.localeCompare(a.dateStr));
+return <div className="cd"><div className="ch"><span className="ct">Dispensasi Keterlambatan</span><span style={{fontSize:11,color:"#64748b",fontWeight:400}}>{MN[today2.getMonth()]} {today2.getFullYear()}</span></div>
 <div style={{fontSize:12,color:"#64748b",marginBottom:12,padding:"10px 14px",background:BL,borderRadius:10}}>Tidak ada toleransi keterlambatan. Masuk lewat 08:00 = Terlambat. Admin bisa memberikan dispensasi.</div>
-{rows.length===0?<div style={{textAlign:"center",padding:24,color:"#94a3b8"}}>Tidak ada keterlambatan</div>:
+{rows.length===0?<div style={{textAlign:"center",padding:24,color:"#94a3b8"}}>Tidak ada keterlambatan bulan ini</div>:
 <div className="tw"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Masuk</th><th>Telat</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{rows.map(r=>{
 const isDisp=dp[r.k];
 return <tr key={r.k}><td style={{fontWeight:600}}>{r.d} {MN[r.mo]}</td><td><div className="er"><div className="av sm" style={{background:AV[r.i%9]}}>{r.e.n[0]}</div>{r.e.n}</div></td><td className="mo">{r.ci}</td><td><span style={bg("terlambat")}>+{r.lm}m</span></td><td><span style={bg(isDisp?"hadir":"terlambat")}>{isDisp?"Hadir (Dispensasi)":"Terlambat"}</span></td><td><button className={"btn bs "+(isDisp?"bd":"bo")} onClick={()=>tD(r.e.id,r.dateStr)}>{isDisp?"Cabut":"Dispensasi"}</button></td></tr>;})}</tbody></table></div>}</div>;};
 
-const AEmp=()=><div className="cd"><div className="ch"><span className="ct">Karyawan & Jabatan</span></div><div className="tw"><table><thead><tr><th>ID</th><th>Nama</th><th>Jabatan</th><th>Tgl Gaji</th><th>Gaji Pokok</th><th>Aksi</th></tr></thead><tbody>{em.map((e,i)=>{const isE=ee===e.id;return <tr key={e.id}><td className="mo" style={{color:BR,fontWeight:600}}>{e.id}</td><td><div className="er"><div className="av" style={{background:AV[i%9]}}>{e.n[0]}</div><strong>{e.n}</strong></div></td><td>{isE?<select className="inp" value={ef.p} onChange={x=>sEf(p=>({...p,p:x.target.value}))} style={{width:130}}>{PL.map(p=><option key={p}>{p}</option>)}</select>:e.p}</td><td>{isE?<input className="inp" type="number" value={ef.pd} onChange={x=>sEf(p=>({...p,pd:+x.target.value}))} style={{width:60}}/>:<span style={bg("cuti")}>Tgl {e.pd}</span>}</td><td>{isE?<input className="inp" type="number" value={ef.s} onChange={x=>sEf(p=>({...p,s:+x.target.value}))} style={{width:120}}/>:fm(e.s)}</td><td>{isE?<div style={{display:"flex",gap:4}}><button className="btn bs" onClick={()=>{sEm(p=>p.map(x=>x.id===e.id?{...x,...ef}:x));su("employees",{position:ef.p,pay_date:ef.pd,salary:ef.s},"id=eq."+e.id);sEe(null);}}><Check size={12}/></button><button className="btn bo bs" onClick={()=>sEe(null)}><X size={12}/></button></div>:<button className="btn bo bs" onClick={()=>{sEe(e.id);sEf({p:e.p,pd:e.pd,s:e.s});}}><Edit3 size={12}/></button>}</td></tr>;})}</tbody></table></div></div>;
+const[newEmp,sNewEmp]=useState(false);const[newEmpF,sNewEmpF]=useState({id:"",n:"",p:"Staff",pd:1,s:0});
+const AEmp=()=><div className="cd"><div className="ch"><span className="ct">Karyawan & Jabatan</span><button className="btn" onClick={()=>sNewEmp(!newEmp)}>{newEmp?"Batal":<><Plus size={14}/>Tambah</>}</button></div>
+{newEmp&&<div style={{padding:14,background:BL,borderRadius:12,marginBottom:12}}>
+<div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
+<input className="inp" placeholder="ID Mesin Absensi" value={newEmpF.id} onChange={e=>sNewEmpF(p=>({...p,id:e.target.value}))} style={{width:130}}/>
+<input className="inp" placeholder="Nama Lengkap" value={newEmpF.n} onChange={e=>sNewEmpF(p=>({...p,n:e.target.value.toUpperCase()}))} style={{width:160}}/>
+<select className="inp" value={newEmpF.p} onChange={e=>sNewEmpF(p=>({...p,p:e.target.value}))} style={{width:130}}>{PL.map(p=><option key={p}>{p}</option>)}</select>
+<input className="inp" type="number" placeholder="Tgl Gaji" value={newEmpF.pd} onChange={e=>sNewEmpF(p=>({...p,pd:+e.target.value}))} style={{width:70}}/>
+<input className="inp" type="number" placeholder="Gaji Pokok" value={newEmpF.s} onChange={e=>sNewEmpF(p=>({...p,s:+e.target.value}))} style={{width:120}}/>
+</div>
+<button className="btn" style={{background:BR,color:"#fff"}} onClick={()=>{if(!newEmpF.id||!newEmpF.n){alert("ID dan Nama wajib diisi");return;}
+if(em.find(e=>e.id===newEmpF.id)){alert("ID sudah ada");return;}
+const emp={id:newEmpF.id,n:newEmpF.n,d:"AWAKESTD",p:newEmpF.p,pd:newEmpF.pd,s:newEmpF.s};
+si("employees",{id:emp.id,name:emp.n,department:emp.d,position:emp.p,pay_date:emp.pd,salary:emp.s}).then(r=>{if(r?.[0])sEm(p=>[...p,emp]);});
+sNewEmp(false);sNewEmpF({id:"",n:"",p:"Staff",pd:1,s:0});
+}}>Simpan Karyawan Baru</button>
+</div>}
+<div className="tw"><table><thead><tr><th>ID</th><th>Nama</th><th>Jabatan</th><th>Tgl Gaji</th><th>Gaji Pokok</th><th>Aksi</th></tr></thead><tbody>{em.map((e,i)=>{const isE=ee===e.id;return <tr key={e.id}><td className="mo" style={{color:BR,fontWeight:600}}>{e.id}</td><td><div className="er"><div className="av" style={{background:AV[i%9]}}>{e.n[0]}</div><strong>{e.n}</strong></div></td><td>{isE?<select className="inp" value={ef.p} onChange={x=>sEf(p=>({...p,p:x.target.value}))} style={{width:130}}>{PL.map(p=><option key={p}>{p}</option>)}</select>:e.p}</td><td>{isE?<input className="inp" type="number" value={ef.pd} onChange={x=>sEf(p=>({...p,pd:+x.target.value}))} style={{width:60}}/>:<span style={bg("cuti")}>Tgl {e.pd}</span>}</td><td>{isE?<input className="inp" type="number" value={ef.s} onChange={x=>sEf(p=>({...p,s:+x.target.value}))} style={{width:120}}/>:fm(e.s)}</td><td>{isE?<div style={{display:"flex",gap:4}}><button className="btn bs" onClick={()=>{sEm(p=>p.map(x=>x.id===e.id?{...x,...ef}:x));su("employees",{position:ef.p,pay_date:ef.pd,salary:ef.s},"id=eq."+e.id);sEe(null);}}><Check size={12}/></button><button className="btn bo bs" onClick={()=>sEe(null)}><X size={12}/></button></div>:<button className="btn bo bs" onClick={()=>{sEe(e.id);sEf({p:e.p,pd:e.pd,s:e.s});}}><Edit3 size={12}/></button>}</td></tr>;})}</tbody></table></div></div>;
 
 const AAcc=()=><div className="cd"><div className="ch"><span className="ct">Akun Karyawan</span><button className="btn" onClick={()=>sShowReg(!showReg)}>{showReg?"Batal":<><Plus size={14}/>Daftarkan</>}</button></div>
 <p style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>Admin mendaftarkan akun. Karyawan bisa ubah password sendiri.</p>
