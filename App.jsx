@@ -481,6 +481,7 @@ const[clf,sClf]=useState({t:"Cuti",s:"",e:"",r:""});const[scl,sScl]=useState(fal
 const[ee,sEe]=useState(null);const[ef,sEf]=useState({p:"",pd:1,s:0});
 const[sns,sSns]=useState(false);const[snp,sSnp]=useState("");const[sls,sSls]=useState("");const[ups,sUps]=useState("");const[ovr,sOvr]=useState({});const[manAtt,sManAtt]=useState({});const[lbr,sLbr]=useState([]);const[showLbr,sShowLbr]=useState(false);const[lbrF,sLbrF]=useState({ei:"",tgl:"",jam:0,ket:""});const[eLbr,sELbr]=useState(null);const[eLbrF,sELbrF]=useState({jam:0,ket:""});
 const[regF,sRegF]=useState({e:"",u:"",p:""});const[showReg,sShowReg]=useState(false);
+const[newEmp,sNewEmp]=useState(false);const[newEmpF,sNewEmpF]=useState({id:"",n:"",p:"Staff",pd:1,s:0});
 const[chpw,sChpw]=useState({o:"",n:"",c:""});
 const[saldoHidden,sSaldoHidden]=useState(true);
 const[fabOpen,sFabOpen]=useState(false);
@@ -940,7 +941,6 @@ return <div className="cd"><div className="ch"><span className="ct">Dispensasi K
 const isDisp=dp[r.k];
 return <tr key={r.k}><td style={{fontWeight:600}}>{r.d} {MN[r.mo]}</td><td><div className="er"><div className="av sm" style={{background:AV[r.i%9]}}>{r.e.n[0]}</div>{r.e.n}</div></td><td className="mo">{r.ci}</td><td><span style={bg("terlambat")}>+{r.lm}m</span></td><td><span style={bg(isDisp?"hadir":"terlambat")}>{isDisp?"Hadir (Dispensasi)":"Terlambat"}</span></td><td><button className={"btn bs "+(isDisp?"bd":"bo")} onClick={()=>tD(r.e.id,r.dateStr)}>{isDisp?"Cabut":"Dispensasi"}</button></td></tr>;})}</tbody></table></div>}</div>;};
 
-const[newEmp,sNewEmp]=useState(false);const[newEmpF,sNewEmpF]=useState({id:"",n:"",p:"Staff",pd:1,s:0});
 const AEmp=()=><div className="cd"><div className="ch"><span className="ct">Karyawan & Jabatan</span><button className="btn" onClick={()=>sNewEmp(!newEmp)}>{newEmp?"Batal":<><Plus size={14}/>Tambah</>}</button></div>
 {newEmp&&<div style={{padding:14,background:BL,borderRadius:12,marginBottom:12}}>
 <div style={{fontSize:12,color:"#64748b",marginBottom:8}}>ID harus sesuai User ID di mesin absensi (contoh: 85146)</div>
